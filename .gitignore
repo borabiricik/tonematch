@@ -1,0 +1,28 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local data: audio, stems, models, the user's device backups and generated patches
+data/
+models/
+backups/
+output/
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.webm
+
+# Notes quoting decompiled BOSS TONE STUDIO code stay local (gt1_spec.json, a parameter table, is kept)
+docs/06-gt1-protocol-extracted.md
+
+# Secrets and OS files
+.env
+.env.*
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,33 @@
+<!-- @dsCard height=288 -->
+<style>
+  html, body { margin: 0; height: 100%; background: var(--canvas); }
+  .cover { position: relative; width: 960px; height: 288px; overflow: hidden; background: var(--canvas); }
+  .art { position: absolute; inset: 0; width: 960px; height: 288px; }
+  .slab, .amber, .soft, .well { rx: var(--radius-md); }
+  .slab { fill: var(--console-bg); }
+  .amber { fill: var(--accent); }
+  .soft { fill: var(--accent-soft); }
+  .well { fill: var(--well); stroke: var(--line); stroke-width: 1; }
+  .trk { fill: none; stroke: var(--console-dim); stroke-opacity: 0.35; stroke-width: 4; stroke-linecap: round; }
+  .arc { fill: none; stroke: var(--led); stroke-width: 4; stroke-linecap: round; }
+  .big-trk { fill: none; stroke: var(--on-accent); stroke-opacity: 0.25; stroke-width: 10; stroke-linecap: round; }
+  .big { fill: none; stroke: var(--on-accent); stroke-width: 10; stroke-linecap: round; }
+  .name { position: absolute; left: 40px; bottom: 40px; width: 440px; display: grid; gap: 10px; }
+  .name h1 { margin: 0; font-family: var(--font-sans); font-size: 80px; line-height: 0.92; font-weight: 700; font-stretch: 112%; letter-spacing: -0.02em; color: var(--ink); }
+  .name p { margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 20px; color: var(--ink-muted); }
+</style>
+<div class="cover">
+  <svg class="art" viewBox="0 0 960 288" aria-hidden="true">
+  <!-- blocks: console-bg 192x296 slab (x480), accent 272x184 bleeding top/right, accent-soft 128x96 and well 128x96 bleeding bottom; corners radius-md on inner edges only
+       arrangement: one tall dark slab with an amber field and two satellites, flush on a space-4 gutter
+       pattern: knob arcs (README: "LEDs for state, knobs as on the front panel"), twelve led arcs at r=17 on the slab = a KnobRow x2, one on-accent arc r=58 on the accent block
+       steps: gutter space-4 (16px), arc pitch 56/66px, radii radius-md (7px) -->
+  <rect class="slab" x="480" y="-8" width="192" height="304"/>
+  <rect class="amber" x="688" y="-8" width="280" height="184"/>
+  <rect class="soft" x="688" y="192" width="128" height="104"/>
+  <rect class="well" x="832" y="192" width="136" height="104"/>
+  <path class="trk" d="M 508.0 58.0 A 17 17 0 1 1 532.0 58.0"/><path class="arc" d="M 508.0 58.0 A 17 17 0 1 1 537.0 44.9"/><path class="trk" d="M 564.0 58.0 A 17 17 0 1 1 588.0 58.0"/><path class="arc" d="M 564.0 58.0 A 17 17 0 0 1 568.3 30.9"/><path class="trk" d="M 620.0 58.0 A 17 17 0 1 1 644.0 58.0"/><path class="arc" d="M 620.0 58.0 A 17 17 0 0 1 632.8 29.0"/><path class="trk" d="M 508.0 124.0 A 17 17 0 1 1 532.0 124.0"/><path class="arc" d="M 508.0 124.0 A 17 17 0 0 1 525.5 95.9"/><path class="trk" d="M 564.0 124.0 A 17 17 0 1 1 588.0 124.0"/><path class="arc" d="M 564.0 124.0 A 17 17 0 0 1 560.1 118.0"/><path class="trk" d="M 620.0 124.0 A 17 17 0 1 1 644.0 124.0"/><path class="arc" d="M 620.0 124.0 A 17 17 0 0 1 625.7 96.2"/><path class="trk" d="M 508.0 190.0 A 17 17 0 1 1 532.0 190.0"/><path class="arc" d="M 508.0 190.0 A 17 17 0 1 1 536.5 173.8"/><path class="trk" d="M 564.0 190.0 A 17 17 0 1 1 588.0 190.0"/><path class="arc" d="M 564.0 190.0 A 17 17 0 0 1 577.6 161.1"/><path class="trk" d="M 620.0 190.0 A 17 17 0 1 1 644.0 190.0"/><path class="arc" d="M 620.0 190.0 A 17 17 0 0 1 636.0 161.5"/><path class="trk" d="M 508.0 256.0 A 17 17 0 1 1 532.0 256.0"/><path class="arc" d="M 508.0 256.0 A 17 17 0 0 1 522.4 227.2"/><path class="trk" d="M 564.0 256.0 A 17 17 0 1 1 588.0 256.0"/><path class="arc" d="M 564.0 256.0 A 17 17 0 0 1 570.5 227.9"/><path class="trk" d="M 620.0 256.0 A 17 17 0 1 1 644.0 256.0"/><path class="arc" d="M 620.0 256.0 A 17 17 0 0 1 632.0 227.0"/>
+  <path class="big-trk" d="M 783.0 133.0 A 58 58 0 1 1 865.0 133.0"/><path class="big" d="M 783.0 133.0 A 58 58 0 1 1 881.9 88.4"/>
+</svg>
+  <div class="name"><h1>ToneMatch</h1><p>Şarkının gitar tonu, BOSS GT-1 patch'i olarak.</p></div>
+</div>

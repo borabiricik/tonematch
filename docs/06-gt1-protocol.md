@@ -1,7 +1,7 @@
 # 06 — GT-1 İletişim Protokolü (uygulanan ve doğrulanan)
 
 Kaynak: BOSS TONE STUDIO for GT-1'in kendi dosyaları + decompile edilmiş AS3 kodu. Ayrıntılı kanıtlar
-(dosya:satır) `06-gt1-protocol-extracted.md` içinde (BTS kodundan alıntı içerdiği için repoda yok, sadece yerelde). Kod: `src/tonematch/device/gt1/`.
+(dosya:satır) `06-gt1-protocol-extracted.md` içinde. Kod: `src/tonematch/device/gt1/`.
 
 ## Tek doğruluk kaynağı: `gt1_spec.json`
 `src/tonematch/device/gt1/data/gt1_spec.json`, `tools/build_gt1_spec.py` ile **üretilir** (elle düzenlenmez):

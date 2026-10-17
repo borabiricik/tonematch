@@ -17,9 +17,6 @@ output/
 *.m4a
 *.webm
 
-# Notes quoting decompiled BOSS TONE STUDIO code stay local (gt1_spec.json, a parameter table, is kept)
-docs/06-gt1-protocol-extracted.md
-
 # Secrets and OS files
 .env
 .env.*

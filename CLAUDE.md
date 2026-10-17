@@ -19,7 +19,7 @@ patch'leri üreten ve cihaza yazan araç. Çalışır durumda (v0.1, 2026-10-17)
 | `docs/02-architecture.md` | modüller, veri yerleri |
 | `docs/03-separation.md` / `04-tone-analysis.md` | ayırma, rol ayrımı, kalibrasyon sayıları |
 | `docs/05-tone-matching.md` | ton motoru: imza tablosu, knob/efekt kuralları |
-| `docs/06-gt1-protocol.md` (+ `-extracted.md`, sadece yerelde) | SysEx, spec üretimi, BTS kanıtları |
+| `docs/06-gt1-protocol.md` (+ `-extracted.md`) | SysEx, spec üretimi, BTS kanıtları |
 | `docs/07-roadmap.md` | sıradaki işler |
 | `docs/09-setup.md` | komutlar, sorun giderme |
 | `docs/10-tuning.md` | akort tespiti, pitch shifter kuralları, kalibrasyon |

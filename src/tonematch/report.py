@@ -1,4 +1,5 @@
-"""Machine-readable results for the desktop app (`--json`): one `@@RESULT {...}` / `@@ERROR {...}` line."""
+"""Machine-readable results for the desktop app (`--json`): one `@@RESULT {...}` / `@@ERROR {...}` line
+(plus `@@TUNER {...}` stream lines from `gt1 tuner --json`, `@@CALIB {...}` from `calibrate --json`)."""
 
 from __future__ import annotations
 
@@ -8,6 +9,8 @@ import sys
 from .device.gt1.patch import Patch
 
 RESULT, ERROR = "@@RESULT ", "@@ERROR "
+TUNER = "@@TUNER "  # one live tuner reading per line (`gt1 tuner --json`), before the final @@RESULT
+CALIB = "@@CALIB "  # `calibrate --json` progress: countdown / level / measuring, before the final @@RESULT
 
 
 def emit(prefix: str, payload) -> None:

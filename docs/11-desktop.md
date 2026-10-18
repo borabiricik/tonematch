@@ -12,10 +12,10 @@ desktop/
   src/ds/                                  # tasarım sistemi React bileşenleri (Button, Field, Segmented, SlotPicker, Tabs,
                                            #   Panel, Status/Led, Steps, Notice, Dialog, Console, Knob/KnobRow, Timeline,
                                            #   Chip, PatchCard, SlotGrid) — stil: src/styles/components.css (tm- sınıfları)
-  src/app/                                 # uygulama: App (header, sekmeler, çıktı çekmecesi), RunView, DeviceView
+  src/app/                                 # uygulama: App (header, sekmeler, çıktı çekmecesi), RunView, DeviceView, TunerView
   src/cli.ts, src/tuning.ts                # CLI köprüsü (tek iş), akort önizlemesi
   src-tauri/                               # Tauri 2 (Rust)
-    src/lib.rs                             # komutlar: environment, run_cli, cancel_job
+    src/lib.rs                             # komutlar: environment, run_cli, cancel_job, stop_job, cached_slots
     tauri.conf.json, capabilities/default.json, icons/
   dev.ps1 / dev.sh                         # geliştirme başlatıcıları
   app-icon.png                             # ikon kaynağı (`npx tauri icon app-icon.png -o src-tauri/icons`)
@@ -28,6 +28,10 @@ Arayüz **sadece CLI argümanı üretir**. Rust tarafı `uv run --project <repo>
 yedekleme, doğrulama, BTS koruması Python'da kalır.
 
 - Slot yazma onayı arayüzde sorulur, CLI'ye `--yes` geçilir (alt süreçte stdin yok).
+- **Uzun süren işler** (`gt1 tuner --json`): `cli.run(args, onLine, interactive=true)` → stdin açık kalır.
+  `cli.stop()` → `stop_job` bir satır yazıp stdin'i kapatır; CLI temizliğini yapar (cihaz çalma moduna döner) ve
+  normal biter. `cancel_job` süreci öldürür, temizlik yapılmaz: tuner için kullanma. `@@TUNER {...}` gibi `@@`
+  akış satırları sadece işin `onLine`'ına gider, çıktı çekmecesine düşmez.
 - `PYTHONUTF8=1`: Windows'ta konsol kod sayfası (cp1254) yüzünden `→` gibi karakterlerde çökmesin.
 - GUI'ler kısa PATH ile açılır: `~/.local/bin`, `~/.cargo/bin`, WinGet Links, `/opt/homebrew/bin` eklenir.
 - Repo yolu: derlendiği repo (`CARGO_MANIFEST_DIR/../..`); `TONEMATCH_PROJECT` / `TONEMATCH_VENV` ile değişir.
@@ -62,6 +66,15 @@ Rust derleme çıktısı OneDrive/iCloud dışında: `%LOCALAPPDATA%\tonematch\d
   → artifact'a yayınla. Uygulama aynı dosyaları doğrudan kullanır.
 - React 18, klasik JSX (`import * as React`), bileşenler `window.ToneMatch` olarak da paketlenir (vite.ds.config.ts).
 - CLI'nin `--json` çıktısı (`@@RESULT` / `@@ERROR`, `src/tonematch/report.py`): `run`, `gt1 info`, `gt1 list`.
+- **Kalibrasyon** (`app/CalibrateView.tsx`, 2026-10-19): sonuç kartında her tonun "Kalibre et" butonu
+  (`PatchCard onCalibrate`) → `calibrate <youtube-id url> --role R --json [--slot Uxx]`. CLI `@@CALIB` satırları
+  gönderir: `phase: ready` (patch, amp, çalınacak yerler, CTL durumu), `countdown`, `record`, `measure`, ve ~10/sn
+  `kind: level` (dBFS, canlı gösterge); sonunda `@@RESULT` (eksen tablosu, ipuçları, spektral mesafe). `--slot`
+  sadece ilk turda geçer: sonraki turlar cihazda çevrilen knob'ları korur. İkinci ton (CTL açık) için geri sayım 5 sn.
+  Kaynak olarak önbellekteki YouTube id'si verilir (arama tekrar YouTube'a gitmesin). "Dosyaya" hedefinde buton yok.
+  İlk turdan sonra "Slota kaydet…" (onay penceresi) → `gt1 save Uxx --expect-name <patch> --yes --json`: edit buffer
+  okunur, cihazda başka patch seçiliyse reddedilir, slot yedeklenir, `store_patch` ile yazılıp doğrulanır, seçilir;
+  sonuçta değişen knob'lar (`cli._changed_knobs`) gösterilir. "Sadece dinle" sonucunda hedef slot pencerede seçilir.
 
 ## Cihaz bilgisinin hızı (2026-10-17)
 - Slot listesi için tam patch (24 blok, ~1.5–2 s/slot) değil, tek küçük okuma: isim 00,00–0F + PREAMP tip/gain

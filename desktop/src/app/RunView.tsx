@@ -6,6 +6,7 @@ import {
 } from "../ds";
 import { planTuning } from "../tuning";
 import type { Device } from "./App";
+import { Calibration, type CalTarget } from "./CalibrateView";
 import { friendly, load, save, useStored, type Recent } from "./store";
 
 type Target = "slot" | "listen" | "file";
@@ -32,7 +33,7 @@ const TARGET_HINT: Record<Target, string> = {
 type Job =
   | { kind: "idle" }
   | { kind: "running"; title: string; sub: string; steps: { state: Step["state"]; start?: number; end?: number; note?: string }[]; now: string }
-  | { kind: "done"; result: RunResult; target: Target }
+  | { kind: "done"; result: RunResult; target: Target; source: string }
   | { kind: "error"; title: string; text: string; tone: "warn" | "danger" };
 
 /** Turkish dative after a slot read aloud: U94'e, U96'ya, U20'ye. */
@@ -121,7 +122,7 @@ export function RunView({ slot, setSlot, device, env, openLog, onFinished }: Pro
       setJob(state);
     });
     if (r.result) {
-      setJob({ kind: "done", result: r.result, target });
+      setJob({ kind: "done", result: r.result, target, source: sourceArg(source) });
       const p0 = r.result.patches[0];
       const rec: Recent = { title: r.result.title, source: sourceArg(source), slot: p0?.slot?.startsWith("U") ? p0.slot : null, name: p0?.name ?? "", when: Date.now() };
       save("recent", [rec, ...load<Recent[]>("recent", []).filter((x) => x.source !== rec.source)].slice(0, 12));
@@ -212,7 +213,7 @@ export function RunView({ slot, setSlot, device, env, openLog, onFinished }: Pro
               <div className="job__now"><Led state="busy" /><span>{job.now}</span></div>
             </section>
           ) : job.kind === "done" ? (
-            <Result r={job.result} target={job.target} />
+            <Result r={job.result} target={job.target} source={job.source} slot={slot} onSaved={() => onFinished(true)} />
           ) : (
             <Notice tone={job.tone} title={job.title} action={<Button size="sm" onClick={openLog}>Çıktıyı göster</Button>}>{job.text}</Notice>
           )}
@@ -266,7 +267,13 @@ function Empty({ onPick }: { onPick: (r: Recent) => void }) {
   );
 }
 
-function Result({ r, target }: { r: RunResult; target: Target }) {
+/** What `calibrate` gets as the song: the cached YouTube id keeps it offline (a search would hit YouTube again). */
+const calSource = (r: RunResult, source: string) => (r.track_id.startsWith("file_") ? source : `https://www.youtube.com/watch?v=${r.track_id}`);
+
+type ResultProps = { r: RunResult; target: Target; source: string; slot: number; onSaved: () => void };
+function Result({ r, target, source, slot, onSaved }: ResultProps) {
+  const [cal, setCal] = React.useState<CalTarget | null>(null);
+  const [calKey, setCalKey] = React.useState(0);
   const tu = r.tuning;
   const written = r.patches.filter((p) => p.slot?.startsWith("U")).map((p) => p.slot);
   return (
@@ -288,7 +295,17 @@ function Result({ r, target }: { r: RunResult; target: Target }) {
       {r.claude && !r.claude.ok && (
         <Notice tone="warn" title="Claude modu çalışmadı, algoritmanın sonucu yazıldı">{r.claude.error}</Notice>
       )}
-      <div className="results">{r.patches.map((p) => <PatchCard key={p.group} patch={p} duration={r.duration} />)}</div>
+      {cal && <Calibration key={calKey} target={cal} fallbackSlot={slot} onClose={() => setCal(null)} onSaved={onSaved} />}
+      <div className="results">
+        {r.patches.map((p) => (
+          <PatchCard key={p.group} patch={p} duration={r.duration}
+            onCalibrate={target === "file" || !p.slot ? undefined : (tone, ctl) => {
+              setCal({ source: calSource(r, source), role: tone.role, ctl, patch: p.name.trim(),
+                slot: p.slot?.startsWith("U") ? p.slot : null });
+              setCalKey((k) => k + 1);
+            }} />
+        ))}
+      </div>
       <Notice title="Dosyalar">
         Patch: <span className="tm-readout">{r.tsl}</span>
         {r.backup && <><br />Önceki slot yedeği: <span className="tm-readout">{r.backup}</span></>}

@@ -91,6 +91,49 @@ button { -webkit-tap-highlight-color: transparent; }
 .results { display: grid; gap: var(--space-5); }
 .result-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
+/* calibration (play the part, compare the GT-1's USB recording with the song) */
+.calib { display: grid; gap: var(--space-4); padding: var(--space-5); }
+.calib__head { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: var(--space-4); }
+.calib__head > div:first-child { display: grid; gap: 2px; max-width: 60ch; }
+.calib__head h2 { font-size: 19px; line-height: 24px; font-weight: 640; font-stretch: 108%; font-family: var(--font-mono); }
+.calib__amp { font-family: inherit; font-size: 15px; font-weight: 600; color: var(--ink-muted); }
+.calib__tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.calib__where { display: grid; gap: var(--space-2); }
+.calib__steps { display: grid; gap: var(--space-1); margin: 0; padding-left: 1.2em; color: var(--ink-muted); font-size: 13px; }
+.calib__count { display: grid; justify-items: center; gap: var(--space-1); padding: var(--space-5) 0; color: var(--ink-muted); }
+.calib__count-n { font-size: 72px; line-height: 1; color: var(--accent-ink); }
+.calib__rec { display: grid; gap: var(--space-2); }
+.calib__rec-head { display: flex; align-items: center; justify-content: space-between; }
+.calib__rec-label { display: flex; align-items: center; gap: var(--space-2); font-weight: 620; }
+.calib-meter {
+  position: relative; height: 28px; background: var(--well); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-well); overflow: hidden;
+}
+.calib-meter__fill { position: absolute; inset: 0 auto 0 0; background: var(--led); transition: width 90ms linear; }
+.calib-meter__fill.is-hot { background: var(--danger); }
+.calib-meter__peak { position: absolute; top: 3px; bottom: 3px; width: 2px; background: var(--ink); transform: translateX(-1px); }
+.calib-meter__scale { max-width: none; }
+.calib__warn { font-size: 12.5px; color: var(--warning); }
+.calib__report { display: grid; gap: var(--space-4); }
+.calib__score { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--space-3); }
+.calib__score > div { display: grid; gap: 2px; }
+.calib__dist { font-size: 28px; line-height: 34px; color: var(--accent-ink); }
+.calib-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.calib-table th, .calib-table td { padding: 7px var(--space-3); border-top: 1px solid var(--line); text-align: right; vertical-align: middle; }
+.calib-table thead th { border-top: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; font-stretch: 118%; color: var(--ink-muted); }
+.calib-table th:first-child { text-align: left; padding-left: 0; }
+.calib-table tbody th { display: grid; gap: 1px; font-weight: 600; }
+.calib-table__diff.is-off { color: var(--warning); }
+.calib-tag { font-size: 12px; color: var(--ink-muted); }
+.calib-tag.is-ok { color: var(--success); }
+.calib-tag.is-off { color: var(--warning); }
+.calib__hints { display: grid; gap: var(--space-2); }
+.calib__hints ul { display: grid; gap: var(--space-1); margin: 0; padding-left: 1.2em; }
+.calib__file .tm-readout { overflow-wrap: anywhere; font-size: 11.5px; }
+.calib__save { display: grid; gap: var(--space-3); }
+.calib__save-slot { display: grid; gap: var(--space-1); justify-items: start; }
+@media (prefers-reduced-motion: reduce) { .calib-meter__fill { transition: none; } }
+
 /* ------------------------------------------------------------------ device view */
 .view-device { overflow: auto; }
 .device { display: grid; gap: var(--space-5); max-width: 1180px; padding: var(--space-6); }
@@ -99,6 +142,53 @@ button { -webkit-tap-highlight-color: transparent; }
 .device__head p { color: var(--ink-muted); }
 .device__sub { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-2); }
 .device__tools { display: flex; gap: var(--space-2); }
+
+/* ------------------------------------------------------------------ tuner view */
+.view-tuner { overflow: auto; }
+.tuner { display: grid; gap: var(--space-5); max-width: 880px; padding: var(--space-6); }
+.tuner__foot { font-size: 12.5px; line-height: 18px; color: var(--ink-muted); max-width: 72ch; }
+[data-tone="ok"] { --tuner-ink: var(--success); }
+[data-tone="near"] { --tuner-ink: var(--warning); }
+[data-tone="far"] { --tuner-ink: var(--danger); }
+[data-tone="idle"] { --tuner-ink: var(--ink-faint); }
+
+.tuner-single { display: grid; justify-items: center; gap: var(--space-2); padding: var(--space-8) var(--space-6) var(--space-6); }
+.tuner-single__note {
+  font-size: 112px; line-height: 1; font-weight: 700; font-stretch: 112%; letter-spacing: -0.02em;
+  color: var(--tuner-ink); font-variant-numeric: tabular-nums; min-width: 2ch; text-align: center;
+  transition: color var(--dur-fast) var(--ease);
+}
+.tuner-single__cents { font-size: 14px; color: var(--ink-muted); min-height: 20px; }
+.tuner-meter {
+  position: relative; width: 100%; max-width: 640px; height: 56px; margin-top: var(--space-4);
+  background: var(--well); border-radius: var(--radius-md); box-shadow: var(--shadow-well); overflow: hidden;
+}
+.tuner-meter__zone { position: absolute; top: 0; bottom: 0; left: 47%; width: 6%; background: color-mix(in srgb, var(--success) 18%, transparent); }
+.tuner-meter__tick { position: absolute; bottom: 0; width: 1px; height: 12px; background: var(--line-strong); transform: translateX(-0.5px); }
+.tuner-meter__tick--major { height: 22px; }
+.tuner-meter__needle {
+  position: absolute; top: 6px; bottom: 6px; width: 4px; border-radius: 2px; background: var(--tuner-ink);
+  transform: translateX(-2px); transition: left 90ms linear, background var(--dur-fast) var(--ease);
+}
+.tuner-meter__scale { display: flex; justify-content: space-between; width: 100%; max-width: 640px; font-size: 11px; color: var(--ink-muted); }
+
+.tuner-multi { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-3); padding: var(--space-6); }
+.tuner-string { display: grid; justify-items: center; gap: var(--space-1); }
+.tuner-string__bar {
+  position: relative; width: 44px; height: 220px; margin-bottom: var(--space-2);
+  background: var(--well); border-radius: var(--radius-md); box-shadow: var(--shadow-well); overflow: hidden;
+}
+.tuner-string__center { position: absolute; left: 0; right: 0; top: 47%; height: 6%; background: color-mix(in srgb, var(--success) 18%, transparent); }
+.tuner-string__mark {
+  position: absolute; left: 6px; right: 6px; height: 4px; border-radius: 2px; background: var(--tuner-ink);
+  transform: translateY(2px); transition: bottom 90ms linear, background var(--dur-fast) var(--ease);
+}
+.tuner-string__note { font-size: 26px; line-height: 30px; font-weight: 680; font-stretch: 108%; color: var(--tuner-ink); }
+.tuner-string__cents { font-size: 12px; color: var(--ink-muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tuner-meter__needle, .tuner-string__mark { transition: none; }
+}
 
 /* ------------------------------------------------------------------ console drawer */
 .drawer { background: var(--surface); border-top: 1px solid var(--line); }

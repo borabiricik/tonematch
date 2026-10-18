@@ -2,7 +2,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 // One tonematch CLI process at a time (the GT-1's MIDI port can only have one owner); later calls queue.
-// `--json` commands end with one "@@RESULT {...}" or "@@ERROR {...}" line; everything else is log.
+// `--json` commands end with one "@@RESULT {...}" or "@@ERROR {...}" line; everything else is log, except
+// "@@<KIND> {...}" stream lines (e.g. @@TUNER readings): they go to the job's onLine only, not to the console.
 
 type LineEvent = { job: number; stream: "stdout" | "stderr"; line: string };
 type ExitEvent = { job: number; code: number | null };
@@ -32,6 +33,7 @@ function handle(ev: LineEvent | ExitEvent) {
     const text = ev.line.replace(ANSI, "");
     if (text.startsWith("@@RESULT ")) job.result = JSON.parse(text.slice(9));
     else if (text.startsWith("@@ERROR ")) job.error = JSON.parse(text.slice(8));
+    else if (text.startsWith("@@")) job.onLine({ text, stream: ev.stream });
     else {
       const l = { text, stream: ev.stream };
       job.onLine(l);
@@ -57,14 +59,15 @@ let queue: Promise<unknown> = Promise.resolve();
 let waiting = 0;
 export const pending = () => waiting + (current !== null ? 1 : 0);
 
-export function run<T>(args: string[], onLine: (l: Line) => void = () => {}): Promise<Outcome<T>> {
+/** interactive: the job can be asked to finish cleanly with stop() (its stdin stays open). */
+export function run<T>(args: string[], onLine: (l: Line) => void = () => {}, interactive = false): Promise<Outcome<T>> {
   waiting++;
-  const job = queue.then(() => { waiting--; return start<T>(args, onLine); });
+  const job = queue.then(() => { waiting--; return start<T>(args, onLine, interactive); });
   queue = job.catch(() => undefined);
   return job;
 }
 
-function start<T>(args: string[], onLine: (l: Line) => void): Promise<Outcome<T>> {
+function start<T>(args: string[], onLine: (l: Line) => void, interactive: boolean): Promise<Outcome<T>> {
   logListeners.forEach((f) => f({ cmd: `tonematch ${args.join(" ")}` }));
   cancelled = false;
   return new Promise<Outcome<T>>((resolve, reject) => {
@@ -73,7 +76,7 @@ function start<T>(args: string[], onLine: (l: Line) => void): Promise<Outcome<T>
       busyListeners.forEach((f) => f(false));
       resolve({ code, result: job.result as T, error: job.error, cancelled });
     };
-    invoke<number>("run_cli", { args })
+    invoke<number>("run_cli", { args, interactive })
       .then((id) => {
         current = id;
         busyListeners.forEach((f) => f(true));
@@ -90,6 +93,12 @@ export async function cancel() {
   if (current === null) return;
   cancelled = true;
   await invoke("cancel_job", { job: current });
+}
+
+/** Ask the running interactive job to finish on its own (it cleans up, then exits as usual). */
+export async function stop() {
+  if (current === null) return;
+  await invoke("stop_job", { job: current });
 }
 
 export const environment = () => invoke<EnvInfo>("environment");

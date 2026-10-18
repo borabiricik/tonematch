@@ -201,8 +201,10 @@ def main() -> None:
         "fields": {f: f"{n >> 8:02X},{n & 0xFF:02X}" for n, f in sorted(fields.items())},
         "defs": {k: defs[k] for k in sorted(defs)},
         "commands": commands,
+        # read-only for tonematch (never written); LOOP BACK / USB levels matter for `calibrate` recordings
         "system": {k: system[k] for k in ("PREFERENCE: OUTPUT SELECT", "PREFERENCE: PREAMP", "OUTPUT SELECT",
-                                          "INPUT LEVEL") if k in system},
+                                          "INPUT LEVEL", "LOOP BACK", "USB: PRIMARY OUTPUT LEVEL",
+                                          "USB: PRIMARY MIX LEVEL", "USB: DIRECT MONITOR") if k in system},
         "setup": {e["name"]: e["address"] for e in amap["setup"]},
         "patch_categories": consts.get("PATCH_CATEGORY", []),
         "assign_targets": assign_targets,

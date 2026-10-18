@@ -3,13 +3,14 @@ import * as cli from "../cli";
 import { Button, Console, Icon, Mark, Status, Tabs, slotLabel, type ConsoleLine, type LedState, type SlotInfo } from "../ds";
 import { DeviceView } from "./DeviceView";
 import { RunView } from "./RunView";
+import { TunerView } from "./TunerView";
 import { friendly, useStored } from "./store";
 
 // Every action is a tonematch CLI command (cli.ts → src-tauri run_cli); this file only holds app state.
 
 const THEMES = ["system", "light", "dark"] as const;
 type Theme = (typeof THEMES)[number];
-type View = "run" | "device";
+type View = "run" | "device" | "tuner";
 
 export type Device = {
   state: LedState;
@@ -92,7 +93,7 @@ export function App() {
           <span className="tm-label brand__device">GT-1</span>
         </div>
         <Tabs<View> label="Görünüm" value={view} onChange={setView}
-          tabs={[{ id: "run", label: "Ton çıkar" }, { id: "device", label: "Cihaz" }]} />
+          tabs={[{ id: "run", label: "Ton çıkar" }, { id: "device", label: "Cihaz" }, { id: "tuner", label: "Tuner" }]} />
         <div className="header-tools">
           <Status state={device.state} onClick={refreshDevice} disabled={busy || device.refreshing}
             title={device.detail || "GT-1 bağlantısını yeniden kontrol et"}>{device.label}</Status>
@@ -106,6 +107,8 @@ export function App() {
       {view === "run" ? (
         <RunView slot={slot} setSlot={setSlot} device={device} env={env}
           openLog={() => setDrawer(true)} onFinished={(wrote) => { if (wrote) afterWrite(); }} />
+      ) : view === "tuner" ? (
+        <TunerView device={device} busy={busy} />
       ) : (
         <DeviceView device={device} busy={busy} target={slotLabel(slot)} refresh={refreshDevice}
           onPick={(s) => { setSlot(Number(s.slice(1))); setView("run"); }} />

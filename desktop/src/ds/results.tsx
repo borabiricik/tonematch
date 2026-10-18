@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Button } from "./controls";
 import { Chip, KnobRow, Timeline, type Knobs } from "./readouts";
 
 // Shapes of `tonematch run --json` (@@RESULT) and `tonematch gt1 list --json`.
@@ -24,12 +25,19 @@ export const roleName = (r: string) => ROLE[r] ?? r;
 const CONF: Record<string, string> = { high: "emin", medium: "kısmen emin", low: "tahmin" };
 const DRIVE: Record<string, string> = { clean: "temiz", crunch: "crunch", high_gain: "yüksek gain" };
 
-function ToneBlock({ tone, duration, ctl, other }: { tone: Tone; duration: number; ctl?: "off" | "on"; other?: Tone }) {
+type ToneBlockProps = { tone: Tone; duration: number; ctl?: "off" | "on"; other?: Tone; onCalibrate?: () => void; calibrateDisabled?: boolean };
+function ToneBlock({ tone, duration, ctl, other, onCalibrate, calibrateDisabled }: ToneBlockProps) {
   return (
     <div className="tm-tone">
       <div className="tm-tone__head">
         <span className="tm-label">{ctl ? `CTL ${ctl === "off" ? "kapalı" : "açık"}` : "Ton"} · {roleName(tone.role)}</span>
-        <span className="tm-field__hint">{DRIVE[tone.drive] ?? tone.drive}</span>
+        <span className="tm-tone__tools">
+          <span className="tm-field__hint">{DRIVE[tone.drive] ?? tone.drive}</span>
+          {onCalibrate && (
+            <Button size="sm" onClick={onCalibrate} disabled={calibrateDisabled}
+              title="Bu tonu çal; GT-1'in USB kaydı şarkıdaki gitarla karşılaştırılır">Kalibre et</Button>
+          )}
+        </span>
       </div>
       <div className="tm-tone__amp">
         <span className="tm-tone__amp-name">{tone.amp}</span>
@@ -48,9 +56,15 @@ function ToneBlock({ tone, duration, ctl, other }: { tone: Tone; duration: numbe
   );
 }
 
-export type PatchCardProps = { patch: PatchResult; duration: number };
+export type PatchCardProps = {
+  patch: PatchResult;
+  duration: number;
+  /** shows a "Kalibre et" button per tone (the patch must be on the unit) */
+  onCalibrate?: (tone: Tone, ctl: "off" | "on" | undefined) => void;
+  calibrateDisabled?: boolean;
+};
 /** One patch the engine built: slot, name readout, one column per tone (two for a CTL patch). */
-export function PatchCard({ patch: p, duration }: PatchCardProps) {
+export function PatchCard({ patch: p, duration, onCalibrate, calibrateDisabled }: PatchCardProps) {
   const onDevice = !!p.slot?.startsWith("U");
   const [a, b] = p.tones;
   return (
@@ -69,8 +83,14 @@ export function PatchCard({ patch: p, duration }: PatchCardProps) {
       </header>
       <div className={`tm-patch__tones${p.dual ? " tm-patch__tones--dual" : ""}`}>
         {p.dual
-          ? <><ToneBlock tone={a} duration={duration} ctl="off" other={b} /><ToneBlock tone={b} duration={duration} ctl="on" other={a} /></>
-          : <ToneBlock tone={a} duration={duration} />}
+          ? <>
+            <ToneBlock tone={a} duration={duration} ctl="off" other={b} calibrateDisabled={calibrateDisabled}
+              onCalibrate={onCalibrate && (() => onCalibrate(a, "off"))} />
+            <ToneBlock tone={b} duration={duration} ctl="on" other={a} calibrateDisabled={calibrateDisabled}
+              onCalibrate={onCalibrate && (() => onCalibrate(b, "on"))} />
+          </>
+          : <ToneBlock tone={a} duration={duration} calibrateDisabled={calibrateDisabled}
+            onCalibrate={onCalibrate && (() => onCalibrate(a, undefined))} />}
       </div>
     </article>
   );

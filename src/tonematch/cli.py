@@ -152,6 +152,162 @@ def analyze(source: str) -> None:
         console.print(f"[bold]{n}[/]", d)
 
 
+# ---------------------------------------------------------------------------------------- calibrate
+@app.command()
+def calibrate(source: str = typer.Argument(..., help="the song (same URL / file as `run`)"),
+              role: str = typer.Option(None, "--role", "-r", help="rhythm / lead / clean / crunch (default: first found)"),
+              slot: str = typer.Option(None, "--slot", "-s", help="select this slot first (U20); default: current patch"),
+              seconds: float = typer.Option(20, "--seconds", help="recording length"),
+              countdown: int = typer.Option(3, "--countdown", help="seconds before recording starts"),
+              as_json: bool = typer.Option(False, "--json", help="@@CALIB stream + one @@RESULT line (desktop app)")) -> None:
+    """Play the song's part through the patch; the GT-1's USB recording is compared with the song's guitar.
+
+    Step 1 (measure only): shows how the patch differs from the song. Nothing is written to the device."""
+    from .report import CALIB, ERROR, RESULT, emit
+
+    say = (lambda ev: emit(CALIB, ev)) if as_json else None
+    try:
+        out = _calibrate(source, role, slot, seconds, countdown, say)
+    except Exception as e:
+        if not as_json:
+            raise
+        emit(ERROR, {"message": str(e), "kind": type(e).__name__})
+        raise typer.Exit(1)
+    if as_json:
+        return emit(RESULT, out)
+    c = out["compare"]
+    t = Table(title=f"{out['title']} [{out['role']}]  ←→  {out['patch']['name']}  ({out['patch']['amp']})",
+              show_header=True)
+    t.add_column("eksen")
+    t.add_column("şarkı", justify="right")
+    t.add_column("senin çalımın", justify="right")
+    t.add_column("fark", justify="right")
+    for k, (a, b) in out["values"].items():
+        ok = k in c["close"]
+        t.add_row(k, f"{a:+.2f}" if k == "drive" else f"{a:+.1f}", f"{b:+.2f}" if k == "drive" else f"{b:+.1f}",
+                  f"[{'green' if ok else 'yellow'}]{c['diff'][k]:+.2f}[/]" if k == "drive"
+                  else f"[{'green' if ok else 'yellow'}]{c['diff'][k]:+.1f}[/]")
+    console.print(t)
+    console.print("1/3 oktav farkı (patch − şarkı, dB): "
+                  + "  ".join(f"{b} {v:+.0f}" for b, v in c["third_oct_diff"].items()), highlight=False)
+    console.print(f"spektral mesafe: [bold]{c['spectral_distance_db']} dB[/] (küçük = daha yakın; turlar arasında izle)")
+    for h in c["hints"]:
+        console.print(f"  • {h['text']}  ({h['value']:+.2f})" if h["axis"] == "drive" else f"  • {h['text']}  ({h['value']:+.1f} dB)",
+                      highlight=False)
+    if not c["hints"]:
+        console.print("[green]  tüm eksenler yakın[/]")
+    (ds, dp), (rs, rp) = out["fx"]["delay_ms"], out["fx"]["reverb"]
+    if ds != dp:
+        console.print(f"  • delay: şarkı {f'{ds:.0f} ms' if ds else 'yok'}, patch {f'{dp:.0f} ms' if dp else 'yok'}",
+                      highlight=False)
+    console.print(f"  reverb: şarkı {rs}, patch {rp}", highlight=False)
+    for w in out["warnings"]:
+        console.print(f"[yellow]uyarı:[/] {w}", highlight=False)
+    console.print(f"[dim]kayıt: {out['wav']}[/]", highlight=False)
+
+
+def _calibrate(source: str, role: str | None, slot: str | None, seconds: float, countdown: int, say) -> dict:
+    import time
+    from datetime import datetime
+
+    import soundfile as sf
+
+    from . import calibrate as cal
+    from .device.gt1.client import connect, parse_slot, slot_label
+    from .ingest import track_dir
+    from .pipeline import GROUP_ORDER, prepare
+    from .report import ctl_on_patch, tone_view
+
+    def note(msg: str, **ev) -> None:
+        if say:
+            say({"kind": "info", "message": msg, **ev})
+        else:
+            console.print(msg, highlight=False)
+
+    tid, meta, ana = prepare(source)
+    found = [g for g in GROUP_ORDER if g in ana.groups]
+    role = role or (found[0] if found else None)
+    if role not in ana.groups:
+        raise RuntimeError(f"'{role}' bu şarkıda yok; mevcut: {', '.join(found)}")
+    d = track_dir(tid)
+    warnings: list[str] = []
+
+    # which side of a dual (CTL) patch this role is
+    ctl_on = False
+    rep = d / "report.json"
+    if rep.exists():
+        for p in json.loads(rep.read_text(encoding="utf-8")).get("patches", {}).values():
+            r = p.get("recipe", {})
+            if r.get("dual") and role in (r.get("ctl_off"), r.get("ctl_on")):
+                ctl_on = role == r["ctl_on"]
+
+    with connect() as g:
+        if slot:
+            g.select_patch(parse_slot(slot))
+            time.sleep(0.3)
+        if g.read_system("LOOP BACK"):
+            warnings.append("GT-1 LOOP BACK açık: bilgisayarda çalan ses kayda karışır. Kalibrasyon sırasında "
+                            "bilgisayarda ses çalma (ya da cihazdan LOOP BACK'i kapat).")
+        if g.read_system("PREFERENCE: PREAMP"):
+            warnings.append("PREFERENCE: PREAMP = SYSTEM: cihaz patch'in preamp ayarlarını yok sayıyor.")
+        patch = g.read_patch()
+        current = g.current_patch_number()
+    if ctl_on:
+        patch = ctl_on_patch(patch)
+    pview = {"name": patch.name.strip(), "slot": slot_label(current) if current < 99 else None,
+             **tone_view(patch), "summary": patch.summary()}
+    note(f"{meta.get('artist', '')} - {meta.get('title', '')} [{role}] ←→ {pview['name']} ({pview['amp']})")
+    segs = ", ".join(f"{a // 60:.0f}:{a % 60:04.1f}-{b // 60:.0f}:{b % 60:04.1f}" for a, b in ana.groups[role].segments[:4])
+    note(f"çalınacak yer: {segs}" + ("  —  CTL AÇIK olsun (ikinci ton)" if ctl_on else ""), phase="ready",
+         patch=pview["name"], amp=pview["amp"], slot=pview["slot"], ctl_on=ctl_on, duration=ana.duration,
+         segments=[[round(a, 1), round(b, 1)] for a, b in ana.groups[role].segments[:8]])
+
+    dev, dev_label = cal.find_input()
+    for n in range(countdown, 0, -1):
+        note(f"{n} ...", phase="countdown", n=n)
+        time.sleep(1)
+    note(f"ÇAL! ({seconds:.0f} sn kayıt, {dev_label})", phase="record", seconds=seconds)
+    if say:
+        y = cal.record(seconds, dev, on_level=lambda db: say({"kind": "level", "db": db}))
+    else:
+        from rich.live import Live
+
+        with Live("", console=console, refresh_per_second=15, transient=True) as live:
+            def meter(db: float) -> None:
+                n = int(max(0, min(40, (db + 60) * 40 / 60)))
+                live.update(f"[{'red' if db > -3 else 'green'}]{'█' * n}[/]{'·' * (40 - n)} {db:6.1f} dBFS")
+            y = cal.record(seconds, dev, on_level=meter)
+    note("ölçülüyor ...", phase="measure")
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    cdir = d / "calib"
+    cdir.mkdir(exist_ok=True)
+    wav = cdir / f"{role}_{stamp}.wav"
+    played = cal.measure(y, role, ana.tempo)  # raises on an unusable take: nothing is kept then
+    sf.write(wav, y.T, cal.SR, subtype="FLOAT")
+    if played.clipped:
+        warnings.append(f"kayıt clip oldu (tepe {played.peak}): ölçüm bozulabilir; patch seviyesini ya da "
+                        "USB kayıt seviyesini düşür.")
+    if played.level_db < -40:
+        warnings.append(f"kayıt seviyesi çok düşük ({played.level_db} dBFS): USB kayıt seviyesini kontrol et.")
+    target = ana.groups[role]
+    cmp = cal.compare(target, played.profile)
+    values = {"drive": (round(cal._drive(target), 3), round(cal._drive(played.profile), 3)),
+              **{k: (target.descriptors.get(k, 0.0), played.profile.descriptors.get(k, 0.0)) for k in cal.AXES}}
+    fx = {"delay_ms": (target.delay.time_ms if target.delay.detected else None,
+                       played.profile.delay.time_ms if played.profile.delay.detected else None),
+          "reverb": (target.reverb.amount, played.profile.reverb.amount)}
+    out = {"track_id": tid, "title": meta.get("title", ""), "artist": meta.get("artist", ""), "role": role,
+           "ctl_on": ctl_on, "patch": {k: v for k, v in pview.items() if k != "summary"}, "values": values,
+           "fx": fx, "compare": cmp, "played_seconds": played.seconds, "level_db": played.level_db,
+           "warnings": warnings, "wav": str(wav), "device": dev_label}
+    # kept for step 4 (learning the engine's systematic errors): what was played, through which knobs
+    (cdir / f"{role}_{stamp}.json").write_text(
+        json.dumps({**out, "patch_summary": pview["summary"], "played_profile": played.profile.to_dict()},
+                   ensure_ascii=False, indent=1, default=str), encoding="utf-8")
+    return out
+
+
 # ---------------------------------------------------------------------------------------------- gt1
 def _device_json(fn):
     """Run fn(g) on a connected GT-1 and print its result as one @@RESULT line (or @@ERROR)."""
@@ -275,6 +431,141 @@ def gt1_restore(tsl: Path, index: int = typer.Option(..., help="1-based patch in
         bk = backup_slots(g, [s], slot_label(s))
         g.store_patch(p, s)
     console.print(f"[green]{p.name} -> {slot_label(s)}[/] (previous content: {bk})")
+
+
+@gt1.command("save")
+def gt1_save(slot: str = typer.Argument(..., help="target slot U01..U99"),
+             expect_name: str = typer.Option(None, "--expect-name",
+                                             help="refuse unless the edit buffer holds this patch (name)"),
+             yes: bool = typer.Option(False, "--yes", "-y", help="do not ask for confirmation"),
+             as_json: bool = typer.Option(False, "--json", help="one @@RESULT line (desktop app)")) -> None:
+    """Save the edit buffer (e.g. knobs turned on the unit while calibrating) to a user slot.
+
+    The slot is backed up first, written, read back and verified; then selected."""
+    from .device.gt1 import slots as slot_cache
+    from .device.gt1.backup import backup_slots
+    from .device.gt1.client import connect, parse_slot, slot_label
+    from .report import ERROR, RESULT, emit
+
+    s = parse_slot(slot)
+    try:
+        with connect() as g:
+            buf = g.read_patch()
+            name = buf.name.strip()
+            if expect_name is not None and name != expect_name.strip():
+                raise RuntimeError(f"cihazda başka patch seçili ('{name}', beklenen '{expect_name.strip()}'); "
+                                   f"{slot_label(s)} yazılmadı")
+            old = g.read_patch(s)
+            changed = _changed_knobs(old, buf)
+            if not g._diff(buf, old):
+                out = {"slot": slot_label(s), "name": name, "saved": False, "changed": [], "backup": None}
+            else:
+                if not yes and not as_json:
+                    console.print(f"{slot_label(s)} ({old.name.strip()}) üzerine edit buffer ({name}) yazılacak:")
+                    for c in changed:
+                        console.print(f"  {c['label']}: {c['from']} → {c['to']}", highlight=False)
+                    typer.confirm("Kaydedilsin mi? (mevcut içerik yedeklenir)", abort=True)
+                bk = backup_slots(g, [s], slot_label(s))
+                g.store_patch(buf, s)  # edit buffer re-checked before the save, slot verified after
+                slot_cache.remember_write(slot_label(s), buf)
+                g.select_patch(s)
+                out = {"slot": slot_label(s), "name": name, "saved": True, "changed": changed, "backup": str(bk)}
+    except Exception as e:
+        if not as_json:
+            raise
+        emit(ERROR, {"message": str(e), "kind": type(e).__name__})
+        raise typer.Exit(1)
+    if as_json:
+        return emit(RESULT, out)
+    if not out["saved"]:
+        console.print(f"{out['slot']} zaten edit buffer ile aynı, yazılmadı.")
+        return
+    console.print(f"[green]{name} -> {out['slot']}[/] kaydedildi ve doğrulandı (önceki içerik: {out['backup']})")
+
+
+_SAVE_FIELDS = [("preamp_a_type", "PREAMP"), ("preamp_a_gain", "GAIN"), ("preamp_a_bass", "BASS"),
+                ("preamp_a_middle", "MIDDLE"), ("preamp_a_treble", "TREBLE"), ("preamp_a_presence", "PRESENCE"),
+                ("preamp_a_level", "LEVEL"), ("od_ds_on_off", "OD/DS"), ("od_ds_drive", "OD DRIVE"),
+                ("master_eq_low_gain", "M.EQ LOW"), ("master_eq_mid_gain", "M.EQ MID"),
+                ("master_eq_high_gain", "M.EQ HIGH"), ("delay_effect_level", "DELAY LEVEL"),
+                ("reverb_effect_level", "REVERB LEVEL"), ("patch_level", "PATCH LEVEL")]
+
+
+def _changed_knobs(old, new) -> list[dict]:
+    """The player-facing values that differ (what a guitarist turns), display units."""
+    return [{"label": label, "from": str(old.get(f)), "to": str(new.get(f))}
+            for f, label in _SAVE_FIELDS if old.get(f) != new.get(f)]
+
+
+@gt1.command("tuner")
+def gt1_tuner(multi: bool = typer.Option(False, "--multi", help="polyphonic tuner: all 6 strings at once"),
+              seconds: float = typer.Option(0, "--seconds", help="stop after N seconds (0 = until Enter / Ctrl+C)"),
+              as_json: bool = typer.Option(False, "--json",
+                                           help="@@TUNER line per reading, stop on a stdin line or EOF (desktop app)")) -> None:
+    """Live tuner from the GT-1 (the unit's own tuner, as in BOSS TONE STUDIO). The unit returns to play mode on exit."""
+    import sys
+    import threading
+    import time
+
+    from rich.live import Live
+
+    from .device.gt1.client import connect
+    from .device.gt1.tuner import run_tuner
+    from .report import ERROR, RESULT, TUNER, emit
+
+    stop = threading.Event()
+
+    def watch_stdin() -> None:
+        # desktop app: any line or a closed pipe (app gone) stops; terminal: Enter stops
+        line = sys.stdin.readline()
+        if line or as_json:
+            stop.set()
+
+    threading.Thread(target=watch_stdin, daemon=True).start()
+    end = time.monotonic() + seconds if seconds > 0 else None
+    should_stop = lambda: stop.is_set() or (end is not None and time.monotonic() > end)
+    mode = "multi" if multi else "single"
+
+    if as_json:
+        try:
+            with connect() as g:
+                emit(TUNER, {"kind": "start", "mode": mode})
+                reason = run_tuner(g, mode, lambda ev: emit(TUNER, ev), should_stop)
+            emit(RESULT, {"reason": reason})
+        except Exception as e:
+            emit(ERROR, {"message": str(e), "kind": type(e).__name__})
+            raise typer.Exit(1)
+        return
+
+    strings: dict[int, dict] = {}
+
+    def render(ev: dict | None = None) -> str:
+        if ev and ev["kind"] == "multi":
+            strings[ev["string"]] = ev
+        if multi:
+            return "  ".join(_tuner_cell(strings.get(n)) for n in range(6, 0, -1))
+        return _tuner_cell(ev, meter=True)
+
+    console.print(f"[bold]GT-1 tuner[/] ({'çoklu' if multi else 'tek tel'}) — durdurmak için Enter / Ctrl+C")
+    try:
+        with connect() as g, Live(render(), console=console, refresh_per_second=30, transient=False) as live:
+            reason = run_tuner(g, mode, lambda ev: live.update(render(ev)), should_stop)
+    except KeyboardInterrupt:
+        reason = "stopped"
+    if reason == "device":
+        console.print("tuner cihazdan kapatıldı")
+
+
+def _tuner_cell(ev: dict | None, meter: bool = False) -> str:
+    if not ev or ev["note"] is None:
+        return "[dim]  --  [/]" + (" " * 24 if meter else "")
+    color = "green" if ev["in_tune"] else "yellow" if abs(ev["cents"]) <= 15 else "red"
+    text = f"[bold {color}]{ev['note']:<2}[/] {ev['cents']:+3d}"
+    if meter:  # 21 cells, 5 cents each
+        pos = round(ev["cents"] / 5) + 10
+        text += "  [dim]♭[/]" + "".join(f"[{color}]█[/]" if i == pos else "[dim]·[/]" if i != 10 else "|"
+                                         for i in range(21)) + "[dim]♯[/]"
+    return text
 
 
 def main() -> None:

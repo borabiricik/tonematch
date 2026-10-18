@@ -46,6 +46,17 @@ cs  = (128 - sum(adres + veri) % 128) % 128
 | Değer kodlaması | ham byte; ekran değeri = `ham*step + (min<0 ? min : 0)` (ör. EQ gain ham 20 = 0 dB, patch level ham 50 = 100) |
 | 14-bit değerler | `<ad>_h`, `<ad>_l` byte çifti (delay time, BPM, pre-delay): `değer = h*128 + l` |
 
+## Tuner (`tuner.py`, `gt1 tuner`)
+Kaynak: BTS `Tuner.as`, `SystemExclusive.as:1210-1240`, `PlayMenuLogic.as:133`.
+| İşlem | Nasıl |
+|---|---|
+| Aç / kapat | DT1 `running_mode` `7F 00 00 02` = `01` tek tel, `02` çoklu (polifonik), `00` çalma modu |
+| Okuma | cihaz kendisi DT1 gönderir (editör modu açıkken; BTS sorgulamaz): tek tel `7F 00 05 00`, çoklu tel N `7F 00 02 2(N-1)` |
+| Veri | `[nota, cent+50]`, nota 0..11 = C..B, `0C` = sinyal yok; BTS ±3 cent'te "akortlu", çoklu metrede ±5 merkeze yapışır |
+| Cihazdan çıkış | oyuncu tuner'ı cihazda kapatırsa cihaz `running_mode = 00` gönderir → komut biter |
+Referans pitch (`sys_tuner_pitch`, A=435+değer) ve tuner çıkışı (MUTE/BYPASS/THRU) SYSTEM ayarı → yazılmaz.
+`[VERIFY ON DEVICE]` push'ların gerçekten geldiği ve çoklu tel numarasının (1 = ince E) yönü.
+
 ## `.tsl` dosyaları
 BTS JSON formatı: `{"device":"GT-1","patchList":[{"params":{alan: ham değer}, "name", "note", ...}], "liveSetData":{...}}`.
 `params` anahtarları spec alan adlarıyla aynıdır. Program hem yedekleri hem üretilen patch'leri bu formatta yazar

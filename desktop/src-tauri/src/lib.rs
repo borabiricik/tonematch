@@ -5,9 +5,9 @@
 //! Same code path as the terminal, so the app and `tonematch.ps1` always behave identically.
 
 use std::collections::HashMap;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -19,6 +19,8 @@ use tauri::{AppHandle, Emitter, Manager, State};
 struct Jobs {
     next: u32,
     running: HashMap<u32, Arc<Mutex<Child>>>,
+    /// stdin of `interactive` jobs: stop_job writes a line and closes it so the CLI can clean up
+    stdins: HashMap<u32, ChildStdin>,
 }
 
 #[derive(Clone, Serialize)]
@@ -150,8 +152,9 @@ fn environment() -> EnvInfo {
 }
 
 /// Start `tonematch <args>`; returns a job id. Output arrives as `cli-line`, the end as `cli-exit`.
+/// interactive: keep stdin open so stop_job can ask the CLI to finish (e.g. `gt1 tuner` restores play mode).
 #[tauri::command]
-fn run_cli(app: AppHandle, jobs: State<'_, Mutex<Jobs>>, args: Vec<String>) -> Result<u32, String> {
+fn run_cli(app: AppHandle, jobs: State<'_, Mutex<Jobs>>, args: Vec<String>, interactive: Option<bool>) -> Result<u32, String> {
     let path = std::env::join_paths(search_path()).map_err(|e| e.to_string())?;
     let mut cmd = match venv_exe() {
         Some(exe) => Command::new(exe),
@@ -170,7 +173,7 @@ fn run_cli(app: AppHandle, jobs: State<'_, Mutex<Jobs>>, args: Vec<String>) -> R
         .env("PYTHONUTF8", "1")
         .env("PYTHONIOENCODING", "utf-8")
         .env("COLUMNS", "110")
-        .stdin(Stdio::null())
+        .stdin(if interactive.unwrap_or(false) { Stdio::piped() } else { Stdio::null() })
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     #[cfg(windows)]
@@ -187,8 +190,15 @@ fn run_cli(app: AppHandle, jobs: State<'_, Mutex<Jobs>>, args: Vec<String>) -> R
     };
     pump(app.clone(), job, "stdout", child.stdout.take().unwrap());
     pump(app.clone(), job, "stderr", child.stderr.take().unwrap());
+    let stdin = child.stdin.take();
     let child = Arc::new(Mutex::new(child));
-    jobs.lock().unwrap().running.insert(job, child.clone());
+    {
+        let mut j = jobs.lock().unwrap();
+        j.running.insert(job, child.clone());
+        if let Some(s) = stdin {
+            j.stdins.insert(job, s);
+        }
+    }
 
     // poll instead of wait() so cancel_job can still lock the child and kill it
     thread::spawn(move || {
@@ -200,7 +210,12 @@ fn run_cli(app: AppHandle, jobs: State<'_, Mutex<Jobs>>, args: Vec<String>) -> R
                 Err(_) => break None,
             }
         };
-        app.state::<Mutex<Jobs>>().lock().unwrap().running.remove(&job);
+        {
+            let state = app.state::<Mutex<Jobs>>();
+            let mut j = state.lock().unwrap();
+            j.running.remove(&job);
+            j.stdins.remove(&job);
+        }
         let _ = app.emit("cli-exit", ExitEvent { job, code });
     });
     Ok(job)
@@ -208,10 +223,29 @@ fn run_cli(app: AppHandle, jobs: State<'_, Mutex<Jobs>>, args: Vec<String>) -> R
 
 #[tauri::command]
 fn cancel_job(jobs: State<'_, Mutex<Jobs>>, job: u32) -> Result<(), String> {
-    let child = jobs.lock().unwrap().running.remove(&job);
+    let child = {
+        let mut j = jobs.lock().unwrap();
+        j.stdins.remove(&job);
+        j.running.remove(&job)
+    };
     match child {
         Some(c) => c.lock().unwrap().kill().map_err(|e| e.to_string()),
         None => Ok(()),
+    }
+}
+
+/// Ask an interactive job to finish on its own: one "stop" line, then EOF. Unlike cancel_job the CLI
+/// runs its cleanup (the GT-1 leaves tuner / editor mode); cli-exit follows as usual.
+#[tauri::command]
+fn stop_job(jobs: State<'_, Mutex<Jobs>>, job: u32) -> Result<(), String> {
+    let stdin = jobs.lock().unwrap().stdins.remove(&job);
+    match stdin {
+        Some(mut s) => {
+            let _ = s.write_all(b"stop
+");
+            Ok(()) // dropping s closes the pipe
+        }
+        None => Err("bu iş durdurma isteğini desteklemiyor".into()),
     }
 }
 
@@ -229,7 +263,7 @@ fn cached_slots() -> serde_json::Value {
 pub fn run() {
     tauri::Builder::default()
         .manage(Mutex::new(Jobs::default()))
-        .invoke_handler(tauri::generate_handler![environment, run_cli, cancel_job, cached_slots])
+        .invoke_handler(tauri::generate_handler![environment, run_cli, cancel_job, stop_job, cached_slots])
         .run(tauri::generate_context!())
         .expect("error while running ToneMatch");
 }

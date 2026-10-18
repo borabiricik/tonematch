@@ -23,6 +23,7 @@ dependencies = [
     "audio-separator[cpu]>=0.30; sys_platform == 'darwin'",
     "scikit-learn>=1.9.1",
     "anthropic>=1.0",
+    "sounddevice>=0.5",
 ]
 
 [project.scripts]

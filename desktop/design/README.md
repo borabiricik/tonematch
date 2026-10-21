@@ -1,53 +1,62 @@
-ToneMatch turns a song into a BOSS GT-1 patch. The interface is built like the faceplate of the gear it controls: engraved uppercase labels, sunken wells for every control, one amber "valve" light for the action and the selection, LEDs for state, and mono readouts for anything the GT-1 shows as a number. Calm, precise, a little warm. Nothing decorative that a piece of hardware would not have.
+ToneMatch turns a song into a BOSS GT-1 patch. The interface follows the guitar signal: song → analysis → patch chain → unit. Its chrome is quiet graphite (Stage) or daylight grey, with one warm accent: the cream of an amp's chicken-head knob. The only real color lives in the effect chain, where every GT-1 block is drawn as the pedal a guitarist already knows: the orange distortion box, the yellow compressor, the violet modulation, the teal delay, the blue reverb, and the cream amp faceplate with its six knobs.
+
+Two distances shape every screen. **Desk mode** (matching a song, browsing slots) is read at arm's length: normal text sizes, dense controls. **Stage mode** (tuner, play-to-calibrate) is read from two meters away with a guitar in your hands: huge numerals, one obvious action, and the Space bar does it.
 
 ## Content fundamentals
 
-- **Language.** The UI speaks Turkish, informally (*sen*), the way a friend in the rehearsal room explains a pedal: "Gitarını EADGBE akortla, pitch shifter yok." Short, active sentences. The control says exactly what happens ("Tonu çıkar ve U94'e yaz") and the result confirms it ("U94 cihaza yazıldı").
-- **Device terms stay as the GT-1 prints them.** GAIN, BASS, MIDDLE, TREBLE, PRESENCE, LEVEL, CTL, FX1, OD/DS, amp models (COMBO CRUNCH, MS1959 I) and patch names are uppercase and untranslated: that is what the player sees on the unit and in BOSS TONE STUDIO.
-- **Numbers are real units.** Slots U01–U99, knobs 0–100, delay in ms, reverb in s, tuning as six notes low to high (D#G#C#F#A#D#), shifts in semitones (−1). Never turn them into words.
-- **Errors say what to do.** "BOSS TONE STUDIO açık. Cihazla aynı anda tek editör konuşabilir. BTS'i kapatıp tekrar dene." No apologies, no codes without a fix.
+- **Language.** The UI speaks Turkish, informally (*sen*), like a friend in the rehearsal room: "Gitarın EADGBE kalsın · pitch shifter yok." Short, active sentences. The control says exactly what happens ("Tonu çıkar ve U20'ye yaz"), the result confirms it with the same words ("U20 cihaza yazıldı ve doğrulandı").
+- **Device words stay as the GT-1 prints them.** GAIN, BASS, MIDDLE, TREBLE, PRESENCE, LEVEL, CTL, FX1, OD/DS, amp models (COMBO CRUNCH, MS1959 I) and patch names are uppercase and untranslated, in the `param` or `patch-name` style. Everything we write ourselves is sentence case: no uppercase labels for our own words.
+- **Numbers are real units.** Slots U01–U99, knobs 0–100, delay in ms, reverb in s, tuning as six notes low to high (D#G#C#F#A#D#), shifts in semitones (−1), cents (+3), dBFS. Minus signs are real (−), not hyphens.
+- **Errors say what to do.** "BOSS TONE STUDIO açık. Cihazla aynı anda tek editör konuşabilir. BTS'i kapatıp tekrar dene." No apologies, no codes without a fix. Empty screens invite the next action.
+- **Writes are always explained.** Every action that changes a slot says, before it happens, what is there now and what protects it ("Mevcut patch önce yedeklenir, yazdıktan sonra geri okunup doğrulanır").
 - No emoji, no exclamation marks.
 
 ## Visual foundations
 
-**Color.** Two themes from one token set: *Aluminium* (light, first) and *Graphite* (dark). Neutrals carry a faint green-grey bias, like anodised panels.
-- `canvas` behind everything, `surface` for panels and the header, `surface-raised` for dialogs and buttons, `well` for anything sunken (inputs, knob tracks, the patch-name readout).
-- Text: `ink` on every ground; `ink-muted` for hints and engraved labels; `ink-faint` only for placeholders and disabled text.
-- `accent` (valve amber) appears once per view: the primary button, the active pipeline step, the target slot. Text on it is `on-accent`. Selected fills use `accent-soft` with `ink`. Accent as text (patch names, the target slot number, the active step) uses `accent-ink`.
-- `led` is for lit LEDs and knob arcs only, never text.
-- `success`, `warning`, `danger` always sit beside a word ("Cihaza yazıldı"), never alone.
+**Color.** Two themes from one token set: *Stage* (dark, first) and *Daylight* (light).
+- Neutrals: `canvas` behind everything, `surface` for cards and the rail, `surface-raised` for dialogs, sheets and toasts, `well` for anything sunken (inputs, meters, knob tracks). `line` separates, `line-strong` edges controls.
+- Text: `ink`; `ink-muted` for hints, captions and labels; `ink-faint` only for placeholders, scale ticks and disabled text.
+- `primary` (knob cream on Stage, amp-tolex brown on Daylight) is the one main action per view and the active marker (current page, active pipeline jack, the target slot). Text on it is `on-primary`. A selected-but-secondary state (chosen segment's page, a selected slot) uses `select` with `ink`.
+- Pedal colors (`pedal-od`, `pedal-fx1`, `pedal-fx2`, `pedal-delay`, `pedal-reverb`, `pedal-preamp`) appear only on effect blocks, always with `on-pedal` text and the block's name beside them. `pedal-edge` gives each enclosure its boundary in Daylight.
+- `success`, `warning`, `danger` always sit beside a word, with `*-soft` backgrounds for notices. `record` is the recording LED and the pedal-on LED.
+- `viz-song` and `viz-you` compare the song with your playing (and the two tones of a CTL patch on the song map). They differ in lightness as well as hue.
 - `focus` is blue on purpose, so keyboard focus never reads as a selection.
-- The console (`console-bg`, `console-ink`, `console-dim`, `console-cmd`, `console-ok`, `console-err`) is dark in both themes, like the unit's screen.
+- The console and the LCD (`console-*`) are dark in both themes, like the unit's screen.
 
-**Type.** Two families, both variable.
-- **Archivo** (width 62–125) for everything read. The `label` style at width 118, uppercase, letter-spaced 0.09em, is the engraving: field labels, knob names, panel heads. Titles run at width 106–112.
-- **Martian Mono** for readouts: slot numbers (`readout`, `readout-lg`), knob values, patch names (`patch-name`) and the console (`console`).
-- Body text is `body` (14/21); hints and metadata `small` (12.5/18); the empty-state headline `display`.
+**Type.** Three families, all variable, all bundled.
+- **Saira** (width 50–125) is the panel printing: page questions (`display`), titles, headings, GT-1 parameter names (`param`, uppercase, wide), every number (`readout`, `readout-lg`, tabular), patch names on the LCD (`patch-name`) and the stage numerals (`stage`, 168px).
+- **Atkinson Hyperlegible Next** is everything you read: `lead`, `body` (14.5/22), `body-strong`, `small`. Chosen for legibility at a distance and for its unambiguous letterforms (Il1, 0O).
+- **Martian Mono** only for console output and file paths (`console`).
 
-**Spacing and shape.** A 4px grid, `space-1` to `space-8`. Panels pad `space-4`, result cards `space-5`, views `space-6`. Radii are machined, not soft: `radius-sm` (4px) for controls, chips and slot cells, `radius-md` (7px) for panels, cards and the console, `radius-lg` (11px) for dialogs only, `radius-round` for LEDs and pills.
+**Spacing and shape.** A 4px grid, `space-1` to `space-12`. Cards pad `space-5`, pages `space-8`. Radii: `radius-xs` (4px) for chips, keycaps and slot cells; `radius-sm` (7px) for controls; `radius-md` (11px) for cards, the console and pedal enclosures; `radius-lg` (16px) for dialogs and sheets; `radius-round` for LEDs and switches.
 
-**Depth.** No drop shadows on content. `shadow-panel` gives panels and buttons a lit top edge, `shadow-well` sinks controls, `shadow-raised` lifts dialogs. Borders do the separating: `line` for hairlines between groups, `line-strong` for control edges.
+**Depth.** Cards get `shadow-card` (a lit top edge, almost no drop). Sunken things get `shadow-well`. Pedals get `shadow-pedal` (painted metal with a bevel). Dialogs, sheets and toasts get `shadow-raised`. Borders do most of the separating.
 
-**Motion.** 120–200ms ease-out on hover, press (buttons move down 1px) and dialog entry; a busy LED pulses. All of it stops under `prefers-reduced-motion`.
+**Motion.** `dur-fast` (110ms) for hover and press (buttons move down 1px), `dur-base` (180ms) for the segmented thumb, switches and needles, `dur-slow` (320ms) for sheets and the pipeline cable. Busy LEDs pulse; the recording LED blinks. All of it stops under `prefers-reduced-motion`.
 
-**Layout.** A 52px header (mark, view tabs, device Status, theme), a 340px control panel on the left ("Yeni ton"), the workspace on the right, the console drawer along the bottom. The workspace opens on a real state (the four pipeline stages and recent runs), then shows the running job, then the result cards.
+**Layout.** A 232px rail (64px below 1100px window width): the mark, four pages with their shortcuts (Ton çıkar ⌘1, Kütüphane ⌘2, Cihaz ⌘3, Tuner ⌘4), the device status card and Settings at the bottom. Pages are centered at most 1180px wide. The console is a drawer along the bottom (⌘J). Calibration opens as a full-window sheet in stage mode.
 
 ## Components
 
 React 18 components exported on `window.ToneMatch` (`components/bundle.js`), styled by `tm-` classes in `components/bundle.css` over the tokens. In the app they are imported from `src/ds`.
-- Use `Button` with `variant="primary"` for the one action of a view; everything else is the default variant or `ghost`.
-- Use `Segmented` for two or three exclusive modes ("Slota yaz / Sadece dinle / Dosyaya"), `SlotPicker` for U01–U99, `Field` with `TextInput` or `Select` for everything typed or chosen.
-- `Steps` shows the four real pipeline stages (İndir, Ayrıştır, Analiz, GT-1) with elapsed time; never use it for anything that is not a sequence.
-- `PatchCard` is the result: slot readout, patch name in the well, then per tone a `KnobRow`, `Chip`s for boost and effects and a `Timeline`; two columns when the patch switches tones with CTL. In Claude mode a tone also shows a `CLAUDE` chip with its confidence and Claude's reason under the amp.
-- `Status` (with `Led`) is the device state in the header; `Notice` carries errors and file paths; `Dialog` confirms anything that overwrites a slot or stops a job; `SlotGrid` shows the unit's 99 slots.
+
+- **Actions.** `Button` (`primary` once per view, `secondary`, `ghost` for tools, `danger` for stop and destructive), `IconButton` (always with a `label`), `Kbd` for shortcuts.
+- **Forms.** `Field` (label, control, hint or error), `TextInput` (`lg` for the song field, an `icon`, an `end` tool), `Select`, `Segmented` (two to four exclusive modes, sliding thumb, arrow keys), `Switch`, `SlotPicker` (U01–U99, wraps).
+- **Feedback.** `Led`, `Chip`, `Status`, `Notice`, `Dialog` (confirms every write and every stop), `Sheet` (stage-mode surface; focus lands on the sheet, never on its close button), `Toaster` + `toast()`, `EmptyState`, `Skeleton`, `Console`.
+- **Gear.** `Knob` and `KnobRow` (the six PREAMP knobs; values that CTL changes are marked), `Lcd` (patch names), `Pedal` (one GT-1 block; bypassed blocks are a dashed outline) and `SignalChain` (a tone as FX1 → OD/DS → PREAMP → FX2 → DELAY → REVERB; blocks that CTL changes carry a CTL tag), `SlotGrid`.
+- **Meters.** `Pipeline` (the four real run stages as jacks on a cable), `SongMap` (where each tone plays, minute ticks), `LevelMeter` (−60…0 dBFS LED ladder with peak hold), `CentsMeter` and `StringMeter` (tuner), `AxisCompare` (song vs you per measured axis), `BandDiff` (1/3-octave difference; ignored bands hatched), `Sparkline`.
+- **Results.** `PatchCard`: slot, LCD name, state chip, the CTL switch for dual patches, "Çalarak karşılaştır", the signal chain, Claude's note, the song map.
+
+The chain order in `SignalChain` is the GT-1's usual one. It shows which blocks are on and how they are set, not the routing stored in the patch.
 
 ## Iconography
 
-A small inline SVG set (`Icon`): 16×16 viewBox, `stroke: currentColor`, stroke-width 1.6, round caps and joins, no fill. Names: check, x, file, minus, plus, chevron, sun, moon, auto. LEDs replace icons for state. No emoji, no icon font. The app mark (`Mark`) is a knob: an `accent` disc with an `on-accent` ring and pointer.
+An inline SVG set (`Icon`): 16×16 viewBox, `stroke: currentColor`, stroke-width 1.5, round caps and joins, no fill (play, stop and record are filled). Names cover navigation (wave, library, device, tuner, settings), actions (search, refresh, backup, folder, copy, play, stop, record, ear, footswitch), states (check, x, info, alert, sparkle for Claude mode) and chevrons. LEDs replace icons for state. No emoji, no icon font. The mark (`Mark`) is a cream chicken-head knob on a `primary` plate, pointer at two o'clock.
 
 ## Accessibility
 
-- Every text pair named in a token's usage note meets 4.5:1 in both themes. Control borders, the focus ring, LEDs and knob arcs meet 3:1 on the grounds they sit on.
-- The focus ring is 2px solid `focus` with a 2px offset on every interactive element.
-- State is never color alone: every LED or state color comes with a word; the two Timeline tones differ in lightness.
-- Knobs carry their label and value as text; Timelines carry their segments as an `aria-label`; Steps mark the active step with `aria-current`.
+- Every text pair named in a token's usage note meets 4.5:1 in both themes; control borders, the focus ring, LEDs, meters and pedal edges meet 3:1.
+- The focus ring is 2px solid `focus` with a 2px offset on every interactive element. Moving between pages moves focus to the page.
+- State is never color alone: every LED and state color comes with a word; tuner tones also change the status sentence ("Pes: teli sıkıştır").
+- Knobs, pedals, meters, the song map and BandDiff carry their values as accessible names; Pipeline marks the active stage with `aria-current`.
+- Stage mode works without a mouse: Space starts and stops, Escape closes (except while recording).

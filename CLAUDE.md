@@ -25,6 +25,7 @@ patch'leri üreten ve cihaza yazan araç. Çalışır durumda (v0.1, 2026-10-17)
 | `docs/10-tuning.md` | akort tespiti, pitch shifter kuralları, kalibrasyon |
 | `docs/12-claude-mode.md` | isteğe bağlı Claude modu: akış, şema, arka uçlar |
 | `docs/11-desktop.md` | Tauri masaüstü arayüzü (Windows + macOS), CLI'yi alt süreç olarak çalıştırır |
+| `docs/13-ui-ux.md` | arayüz v2 "Signal Path": ekranlar, tasarım kararları, kısayollar, demo modu, tasarım sistemi |
 
 ## Altın kurallar
 1. **Cihaz parametreleri tek kaynaktan:** `src/tonematch/device/gt1/data/gt1_spec.json` (üretilmiş;
@@ -51,7 +52,8 @@ patch'leri üreten ve cihaza yazan araç. Çalışır durumda (v0.1, 2026-10-17)
    (`match.apply_pitch_shift`). Tespit kodu (`detect_tuning`) sadece dev araçlarında.
 9. **Masaüstü arayüzü (`desktop/`) ince kabuk:** iş mantığı Python'da kalır, arayüz CLI argümanı üretir ve
    `run_cli` ile çalıştırır (`--json` → `@@RESULT`). Yeni özellik önce CLI'ye, sonra arayüze. Arayüz React 18;
-   görsel kurallar tasarım sisteminde: `desktop/design/` (tokens.json tek kaynak) + `desktop/src/ds/`, docs/11.
+   görsel kurallar tasarım sisteminde: `desktop/design/` (tokens.json tek kaynak) + `desktop/src/ds/`, docs/13.
+   Cihazsız deneme: demo modu (`desktop/src/demo/`); yeni CLI komutu eklenince demo'ya da aynı çıktıyı ekle.
 10. Büyük/ telifli veri repoya girmez: ses, stem, model → `%LOCALAPPDATA%\tonematch\data`.
 
 ## Kod konvansiyonları
@@ -68,6 +70,7 @@ patch'leri üreten ve cihaza yazan araç. Çalışır durumda (v0.1, 2026-10-17)
 .\tonematch.ps1 analyze "<url>"                     # grupları/ölçümleri göster
 .\tonematch.ps1 gt1 info | list | show U20 | backup | restore <tsl> --index N --slot U20
 .\tonematch.ps1 gt1 save U20 [--expect-name "<patch>"]   # edit buffer'ı slota (yedek + doğrulama)
+.\tonematch.ps1 gt1 select U21                      # slotu cihazda seç (yazmaz)
 .\tonematch.ps1 gt1 tuner [--multi]                 # cihazın tuner'ı, canlı (Enter / Ctrl+C ile çık)
 .\tonematch.ps1 calibrate "<url>" --role rhythm --slot U20   # çalarak kalibrasyon: USB kaydı vs şarkı (şimdilik sadece ölçüm)
 uv run pytest

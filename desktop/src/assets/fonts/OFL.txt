@@ -1,8 +1,9 @@
-Archivo.woff2 — Copyright 2020 The Archivo Project Authors (https://github.com/Omnibus-Type/Archivo)
+Saira.woff2 — Copyright 2020 The Saira Project Authors (https://github.com/Omnibus-Type/Saira)
+AtkinsonNext.woff2 — Copyright 2020-2024 The Atkinson Hyperlegible Next Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next)
 MartianMono.woff2 — Copyright 2021 The Martian Mono Project Authors (https://github.com/evilmartians/mono)
 
-Both are subsets (Latin + Turkish) served by Google Fonts. They are licensed under the SIL Open Font
-License, Version 1.1, reproduced below. This license is also available with a FAQ at:
+All are variable fonts subset to Latin + Latin Extended-A (Turkish) from google/fonts. They are licensed
+under the SIL Open Font License, Version 1.1, reproduced below. This license is also available with a FAQ at:
 https://openfontlicense.org
 
 

@@ -34,6 +34,10 @@
 4. `--only` ve grup birleştirme/bölme için etkileşimli onay (isteğe bağlı; varsayılan otomatik kalsın).
 5. Analiz raporu (HTML): grupların zaman çizelgesi, spektrum grafikleri, dinleme klipleri.
 
+## Masaüstü arayüzü
+- [x] Arayüz v2 "Signal Path" + tasarım sistemi v2 + demo modu + `gt1 select` (2026-10-21, `13-ui-ux.md`).
+- Sıradaki arayüz işleri `13-ui-ux.md` sonunda (tweak geri bildirimi, kalibrasyonda "Uygula", yedekten geri yükleme).
+
 ## Faz 7 — Ar-Ge (donanım gerektirir)
 - Reamp kutusu ile closed-loop optimizasyon (DI → GT-1 → USB kayıt → mesafe → Optuna), planı eski
   sürüm `05`'teydi: aşamalı arama (amp tipi → gain → ton → efektler), ~60–200 deneme.

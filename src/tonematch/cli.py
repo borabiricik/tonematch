@@ -403,6 +403,25 @@ def gt1_show(slot: str = typer.Argument("temp", help="U01..U99 or 'temp' (edit b
         console.print_json(json.dumps(p.summary()))
 
 
+@gt1.command("select")
+def gt1_select(slot: str = typer.Argument(..., help="U01..U99"),
+               as_json: bool = typer.Option(False, "--json", help="one @@RESULT line (desktop app)")) -> None:
+    """Switch the GT-1 to a user slot (loads it into the edit buffer). Writes no patch data."""
+    from .device.gt1.client import connect, parse_slot, slot_label
+
+    s = parse_slot(slot)
+
+    def pick(g) -> dict:
+        g.select_patch(s)
+        return {"slot": slot_label(s), "name": g.patch_summary()["name"]}
+
+    if as_json:
+        return _device_json(pick)
+    with connect() as g:
+        r = pick(g)
+    console.print(f"{r['slot']} seçildi: [bold]{r['name'].strip()}[/]", highlight=False)
+
+
 @gt1.command("backup")
 def gt1_backup() -> None:
     """Back up all 99 user patches to backups/<timestamp>_all_U01-U99.tsl (BTS-importable)."""

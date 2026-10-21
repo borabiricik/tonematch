@@ -16,6 +16,18 @@ uv python install 3.11
 uv sync
 ```
 
+## Sıfırdan kurulum (macOS, 2026-10-21'de denendi)
+```sh
+brew install uv ffmpeg                       # Node LTS + Rust (rustup) masaüstü için
+chmod +x tonematch.sh desktop/dev.sh         # repoda çalıştırılabilir işaretli değiller
+UV_PROJECT_ENVIRONMENT="$HOME/Library/Application Support/tonematch/venv" uv sync
+./tonematch.sh --help
+desktop/dev.sh                               # masaüstü uygulaması, dev modda (ilk Rust derlemesi ~1 dk)
+```
+- `src/tonematch/device/gt1/data/gt1_spec.json` repoda yok (`.gitignore` `data/`): Windows makinesinden kopyala ya da
+  `tools/build_gt1_spec.py` ile üret. Yoksa cihaz komutları ve `tests/test_gt1.py` / `test_tuner.py` açılmaz.
+- Cihaz yokken arayüzü denemek: Ayarlar → Demo modu (`13-ui-ux.md`).
+
 ## Kullanım
 BOSS TONE STUDIO **kapalı** olmalı (MIDI portunu tutuyor).
 ```powershell

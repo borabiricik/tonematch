@@ -259,11 +259,29 @@ fn cached_slots() -> serde_json::Value {
         .unwrap_or_else(|| serde_json::json!({ "updated": null, "slots": [] }))
 }
 
+/// Show a file the CLI reported (a .tsl, a backup) in Finder / Explorer. Relative paths are under the repo.
+#[tauri::command]
+fn reveal_path(path: String) -> Result<(), String> {
+    let p = PathBuf::from(&path);
+    let p = if p.is_absolute() { p } else { project_root().join(p) };
+    if !p.exists() {
+        return Err(format!("dosya bulunamadı: {}", p.display()));
+    }
+    let status = if cfg!(target_os = "macos") {
+        Command::new("open").arg("-R").arg(&p).status()
+    } else if cfg!(windows) {
+        Command::new("explorer").arg(format!("/select,{}", p.display())).status()
+    } else {
+        Command::new("xdg-open").arg(p.parent().unwrap_or(&p)).status()
+    };
+    status.map(|_| ()).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .manage(Mutex::new(Jobs::default()))
-        .invoke_handler(tauri::generate_handler![environment, run_cli, cancel_job, stop_job, cached_slots])
+        .invoke_handler(tauri::generate_handler![environment, run_cli, cancel_job, stop_job, cached_slots, reveal_path])
         .run(tauri::generate_context!())
         .expect("error while running ToneMatch");
 }

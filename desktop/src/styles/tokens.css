@@ -1,10 +1,17 @@
 /* ToneMatch — generated from design/tokens.json by scripts/build-tokens.mjs. Do not edit. */
 
 @font-face {
-  font-family: "Archivo";
-  src: url("../assets/fonts/Archivo.woff2") format("woff2");
+  font-family: "Saira";
+  src: url("../assets/fonts/Saira.woff2") format("woff2");
   font-weight: 100 900;
-  font-stretch: 62% 125%;
+  font-stretch: 50% 125%;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("../assets/fonts/AtkinsonNext.woff2") format("woff2");
+  font-weight: 200 800;
   font-display: block;
 }
 
@@ -12,38 +19,54 @@
   font-family: "Martian Mono";
   src: url("../assets/fonts/MartianMono.woff2") format("woff2");
   font-weight: 100 800;
-  font-stretch: 62% 125%;
+  font-stretch: 75% 112.5%;
   font-display: block;
 }
 
 :root {
-  --canvas: #e9ece8;
-  --surface: #f6f7f4;
-  --surface-raised: #ffffff;
-  --well: #e4e7e2;
-  --line: #cdd2cc;
-  --line-strong: #788079;
-  --ink: #161b18;
-  --ink-muted: #555e58;
-  --ink-faint: #5d655f;
-  --accent: #b4520c;
-  --on-accent: #ffffff;
-  --accent-soft: #f5e2cf;
-  --accent-ink: #9a4508;
-  --led: #c95e08;
-  --success: #1d7550;
-  --warning: #7d5b00;
-  --danger: #b3261e;
-  --focus: #2a62c4;
-  --console-bg: #1b201d;
-  --console-ink: #d6dcd7;
-  --console-dim: #929c95;
-  --console-cmd: #f2a65a;
-  --console-ok: #7fd1a6;
-  --console-err: #ff9a8f;
-  --shadow-panel: 0 1px 0 rgba(255,255,255,0.8) inset, 0 1px 2px rgba(22,32,26,0.07);
-  --shadow-well: 0 1px 1px rgba(22,32,26,0.10) inset;
-  --shadow-raised: 0 12px 32px rgba(22,32,26,0.18), 0 2px 6px rgba(22,32,26,0.10);
+  --canvas: #0F1115;
+  --surface: #161920;
+  --surface-raised: #1D212A;
+  --well: #0A0C10;
+  --line: #262B35;
+  --line-strong: #606A7C;
+  --ink: #ECEEF2;
+  --ink-muted: #A3AAB8;
+  --ink-faint: #8A92A1;
+  --primary: #EFE3C8;
+  --primary-hover: #F8F0DE;
+  --on-primary: #1B160C;
+  --select: #2B2721;
+  --focus: #7FB0FF;
+  --success: #4ED39A;
+  --success-soft: #12291F;
+  --warning: #F2C84B;
+  --warning-soft: #2A2410;
+  --danger: #FF7A6E;
+  --danger-soft: #2E1614;
+  --record: #FF4D4D;
+  --pedal-od: #FF8240;
+  --pedal-preamp: #E9DCC0;
+  --pedal-fx1: #F5C534;
+  --pedal-fx2: #A58AFF;
+  --pedal-delay: #34CBAE;
+  --pedal-reverb: #5AA5FF;
+  --on-pedal: #14161C;
+  --pedal-edge: rgba(0,0,0,0.45);
+  --viz-song: #E9DCC0;
+  --viz-you: #5AA5FF;
+  --scrim: rgba(4,5,8,0.72);
+  --console-bg: #08090C;
+  --console-ink: #D3D8E0;
+  --console-dim: #8A93A3;
+  --console-cmd: #EFE3C8;
+  --console-ok: #6FDDAE;
+  --console-err: #FF958B;
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-well: 0 1px 2px rgba(0,0,0,0.6) inset;
+  --shadow-pedal: 0 1px 0 rgba(255,255,255,0.35) inset, 0 -2px 0 rgba(0,0,0,0.18) inset, 0 2px 6px rgba(0,0,0,0.45);
+  --shadow-raised: 0 18px 48px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4);
+  color-scheme: dark;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -51,155 +74,227 @@
   --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
-  --radius-sm: 4px;
-  --radius-md: 7px;
-  --radius-lg: 11px;
+  --space-12: 48px;
+  --radius-xs: 4px;
+  --radius-sm: 7px;
+  --radius-md: 11px;
+  --radius-lg: 16px;
   --radius-round: 999px;
-  --font-sans: Archivo, "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "Martian Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --dur-fast: 110ms;
+  --dur-base: 180ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --font-display: Saira, "Bahnschrift", "DIN Alternate", system-ui, sans-serif;
+  --font-text: "Atkinson Hyperlegible Next", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Martian Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --canvas: #111412;
-    --surface: #191d1b;
-    --surface-raised: #222724;
-    --well: #0d100e;
-    --line: #2c322e;
-    --line-strong: #636c66;
-    --ink: #e8ece8;
-    --ink-muted: #a3aca5;
-    --ink-faint: #848d86;
-    --accent: #f0973a;
-    --on-accent: #1a1005;
-    --accent-soft: #3a2817;
-    --accent-ink: #f4ae66;
-    --led: #ffa640;
-    --success: #5ec79b;
-    --warning: #e3c25c;
-    --danger: #ff8b80;
-    --focus: #86b3ff;
-    --console-bg: #0b0d0c;
-    --console-ink: #d6dcd7;
-    --console-dim: #8a948d;
-    --console-cmd: #f2a65a;
-    --console-ok: #7fd1a6;
-    --console-err: #ff9a8f;
-    --shadow-panel: 0 1px 0 rgba(255,255,255,0.035) inset, 0 1px 2px rgba(0,0,0,0.35);
-    --shadow-well: 0 1px 2px rgba(0,0,0,0.55) inset;
-    --shadow-raised: 0 12px 32px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.4);
-    color-scheme: dark;
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --canvas: #ECEEF1;
+    --surface: #F8F9FB;
+    --surface-raised: #FFFFFF;
+    --well: #E2E5EA;
+    --line: #D3D8DF;
+    --line-strong: #768092;
+    --ink: #14171D;
+    --ink-muted: #4D5564;
+    --ink-faint: #5A6270;
+    --primary: #211D17;
+    --primary-hover: #3A342B;
+    --on-primary: #F4EBD6;
+    --select: #F1E9D8;
+    --focus: #2563EB;
+    --success: #13774F;
+    --success-soft: #DDF1E7;
+    --warning: #875F00;
+    --warning-soft: #F6EBCB;
+    --danger: #C0321F;
+    --danger-soft: #F8E0DA;
+    --record: #D92D20;
+    --pedal-od: #FF8A4C;
+    --pedal-preamp: #E8D8B4;
+    --pedal-fx1: #F2C230;
+    --pedal-fx2: #B39BFF;
+    --pedal-delay: #3DD0B2;
+    --pedal-reverb: #6FB0FF;
+    --on-pedal: #14161C;
+    --pedal-edge: rgba(20,22,28,0.38);
+    --viz-song: #8A6D2F;
+    --viz-you: #2F6FD6;
+    --scrim: rgba(20,23,29,0.42);
+    --console-bg: #15181E;
+    --console-ink: #D3D8E0;
+    --console-dim: #8F98A8;
+    --console-cmd: #EFE3C8;
+    --console-ok: #6FDDAE;
+    --console-err: #FF958B;
+    --shadow-card: 0 1px 0 rgba(255,255,255,0.9) inset, 0 1px 2px rgba(20,23,29,0.06);
+    --shadow-well: 0 1px 2px rgba(20,23,29,0.10) inset;
+    --shadow-pedal: 0 1px 0 rgba(255,255,255,0.55) inset, 0 -2px 0 rgba(0,0,0,0.12) inset, 0 2px 5px rgba(20,23,29,0.14);
+    --shadow-raised: 0 18px 48px rgba(20,23,29,0.18), 0 2px 8px rgba(20,23,29,0.08);
+    color-scheme: light;
   }
 }
 
-:root[data-theme="dark"] {
-  --canvas: #111412;
-  --surface: #191d1b;
-  --surface-raised: #222724;
-  --well: #0d100e;
-  --line: #2c322e;
-  --line-strong: #636c66;
-  --ink: #e8ece8;
-  --ink-muted: #a3aca5;
-  --ink-faint: #848d86;
-  --accent: #f0973a;
-  --on-accent: #1a1005;
-  --accent-soft: #3a2817;
-  --accent-ink: #f4ae66;
-  --led: #ffa640;
-  --success: #5ec79b;
-  --warning: #e3c25c;
-  --danger: #ff8b80;
-  --focus: #86b3ff;
-  --console-bg: #0b0d0c;
-  --console-ink: #d6dcd7;
-  --console-dim: #8a948d;
-  --console-cmd: #f2a65a;
-  --console-ok: #7fd1a6;
-  --console-err: #ff9a8f;
-  --shadow-panel: 0 1px 0 rgba(255,255,255,0.035) inset, 0 1px 2px rgba(0,0,0,0.35);
-  --shadow-well: 0 1px 2px rgba(0,0,0,0.55) inset;
-  --shadow-raised: 0 12px 32px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.4);
-  color-scheme: dark;
+:root[data-theme="light"] {
+  --canvas: #ECEEF1;
+  --surface: #F8F9FB;
+  --surface-raised: #FFFFFF;
+  --well: #E2E5EA;
+  --line: #D3D8DF;
+  --line-strong: #768092;
+  --ink: #14171D;
+  --ink-muted: #4D5564;
+  --ink-faint: #5A6270;
+  --primary: #211D17;
+  --primary-hover: #3A342B;
+  --on-primary: #F4EBD6;
+  --select: #F1E9D8;
+  --focus: #2563EB;
+  --success: #13774F;
+  --success-soft: #DDF1E7;
+  --warning: #875F00;
+  --warning-soft: #F6EBCB;
+  --danger: #C0321F;
+  --danger-soft: #F8E0DA;
+  --record: #D92D20;
+  --pedal-od: #FF8A4C;
+  --pedal-preamp: #E8D8B4;
+  --pedal-fx1: #F2C230;
+  --pedal-fx2: #B39BFF;
+  --pedal-delay: #3DD0B2;
+  --pedal-reverb: #6FB0FF;
+  --on-pedal: #14161C;
+  --pedal-edge: rgba(20,22,28,0.38);
+  --viz-song: #8A6D2F;
+  --viz-you: #2F6FD6;
+  --scrim: rgba(20,23,29,0.42);
+  --console-bg: #15181E;
+  --console-ink: #D3D8E0;
+  --console-dim: #8F98A8;
+  --console-cmd: #EFE3C8;
+  --console-ok: #6FDDAE;
+  --console-err: #FF958B;
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.9) inset, 0 1px 2px rgba(20,23,29,0.06);
+  --shadow-well: 0 1px 2px rgba(20,23,29,0.10) inset;
+  --shadow-pedal: 0 1px 0 rgba(255,255,255,0.55) inset, 0 -2px 0 rgba(0,0,0,0.12) inset, 0 2px 5px rgba(20,23,29,0.14);
+  --shadow-raised: 0 18px 48px rgba(20,23,29,0.18), 0 2px 8px rgba(20,23,29,0.08);
+  color-scheme: light;
+}
+
+.t-stage {
+  font-family: var(--font-display);
+  font-size: 168px;
+  line-height: 150px;
+  font-weight: 600;
+  font-stretch: 88%;
+  letter-spacing: -0.03em;
 }
 
 .t-display {
-  font-family: var(--font-sans);
-  font-size: 30px;
-  line-height: 34px;
-  font-weight: 680;
+  font-family: var(--font-display);
+  font-size: 36px;
+  line-height: 40px;
+  font-weight: 600;
+  font-stretch: 92%;
   letter-spacing: -0.01em;
 }
 
 .t-title {
-  font-family: var(--font-sans);
-  font-size: 19px;
-  line-height: 24px;
-  font-weight: 640;
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 600;
+  font-stretch: 96%;
 }
 
 .t-heading {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 20px;
-  font-weight: 620;
+  font-family: var(--font-display);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.t-label {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  line-height: 16px;
+  font-weight: 600;
+  font-stretch: 104%;
+  letter-spacing: 0.02em;
+}
+
+.t-param {
+  font-family: var(--font-display);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 640;
+  font-stretch: 112%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.t-readout {
+  font-family: var(--font-display);
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 560;
+  font-variant-numeric: tabular-nums;
+}
+
+.t-readout-lg {
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 36px;
+  font-weight: 600;
+  font-stretch: 90%;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.t-patch-name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  font-stretch: 110%;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.t-lead {
+  font-family: var(--font-text);
+  font-size: 16px;
+  line-height: 25px;
+  font-weight: 400;
 }
 
 .t-body {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 21px;
+  font-family: var(--font-text);
+  font-size: 14.5px;
+  line-height: 22px;
   font-weight: 400;
 }
 
 .t-body-strong {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 21px;
-  font-weight: 600;
+  font-family: var(--font-text);
+  font-size: 14.5px;
+  line-height: 22px;
+  font-weight: 700;
 }
 
 .t-small {
-  font-family: var(--font-sans);
-  font-size: 12.5px;
-  line-height: 18px;
+  font-family: var(--font-text);
+  font-size: 13px;
+  line-height: 19px;
   font-weight: 400;
-}
-
-.t-label {
-  font-family: var(--font-sans);
-  font-size: 10.5px;
-  line-height: 14px;
-  font-weight: 640;
-  letter-spacing: 0.09em;
-}
-
-.t-readout {
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  line-height: 18px;
-  font-weight: 480;
-}
-
-.t-readout-lg {
-  font-family: var(--font-mono);
-  font-size: 28px;
-  line-height: 30px;
-  font-weight: 520;
-  letter-spacing: -0.02em;
-}
-
-.t-patch-name {
-  font-family: var(--font-mono);
-  font-size: 15px;
-  line-height: 20px;
-  font-weight: 560;
-  letter-spacing: 0.04em;
 }
 
 .t-console {
   font-family: var(--font-mono);
   font-size: 12px;
-  line-height: 18px;
+  line-height: 19px;
   font-weight: 400;
 }

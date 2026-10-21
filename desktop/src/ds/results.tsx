@@ -1,132 +1,85 @@
 import * as React from "react";
-import { Button } from "./controls";
-import { Chip, KnobRow, Timeline, type Knobs } from "./readouts";
+import { Button, Segmented } from "./controls";
+import { Chip } from "./feedback";
+import { cx, driveName, roleName } from "./format";
+import { Lcd, SignalChain, type PatchResult, type Tone } from "./gear";
+import { Icon } from "./icons";
+import { SongMap } from "./meters";
 
-// Shapes of `tonematch run --json` (@@RESULT) and `tonematch gt1 list --json`.
-export type Tone = {
-  role: string; amp: string; drive: string; stereo: string;
-  knobs: Knobs;
-  od: { type: string; drive: number; level: number } | null;
-  fx: { slot: string; name: string; detail: string }[];
-  segments: number[][];
-  claude?: { confidence: "high" | "medium" | "low"; why: string } | null;
-};
-export type PatchResult = { group: string; name: string; slot: string | null; dual: boolean; assigns: string[]; tones: Tone[] };
-export type RunResult = {
-  track_id: string; title: string; artist: string; duration: number; tempo: number;
-  tuning: { name: string; user_tuning: string; semitones: number; evidence?: { source?: string } } | null;
-  patches: PatchResult[]; tsl: string; backup: string | null;
-  claude?: { enabled: boolean; ok: boolean; model: string; backend: string; song?: string; rig_notes?: string; error?: string } | null;
-};
-export type SlotInfo = { slot: string; name: string; amp: string; gain: number; dual?: boolean };
-
-const ROLE: Record<string, string> = { rhythm: "Ritim", lead: "Solo", clean: "Temiz", crunch: "Crunch" };
-export const roleName = (r: string) => ROLE[r] ?? r;
 const CONF: Record<string, string> = { high: "emin", medium: "kısmen emin", low: "tahmin" };
-const DRIVE: Record<string, string> = { clean: "temiz", crunch: "crunch", high_gain: "yüksek gain" };
-
-type ToneBlockProps = { tone: Tone; duration: number; ctl?: "off" | "on"; other?: Tone; onCalibrate?: () => void; calibrateDisabled?: boolean };
-function ToneBlock({ tone, duration, ctl, other, onCalibrate, calibrateDisabled }: ToneBlockProps) {
-  return (
-    <div className="tm-tone">
-      <div className="tm-tone__head">
-        <span className="tm-label">{ctl ? `CTL ${ctl === "off" ? "kapalı" : "açık"}` : "Ton"} · {roleName(tone.role)}</span>
-        <span className="tm-tone__tools">
-          <span className="tm-field__hint">{DRIVE[tone.drive] ?? tone.drive}</span>
-          {onCalibrate && (
-            <Button size="sm" onClick={onCalibrate} disabled={calibrateDisabled}
-              title="Bu tonu çal; GT-1'in USB kaydı şarkıdaki gitarla karşılaştırılır">Kalibre et</Button>
-          )}
-        </span>
-      </div>
-      <div className="tm-tone__amp">
-        <span className="tm-tone__amp-name">{tone.amp}</span>
-        {tone.claude && <Chip keyLabel="CLAUDE" detail={CONF[tone.claude.confidence]}>önerisi</Chip>}
-      </div>
-      {tone.claude && <p className="tm-tone__note">{tone.claude.why}</p>}
-      <KnobRow values={tone.knobs} compareTo={other?.knobs} />
-      {(tone.od || tone.fx.length > 0) && (
-        <div className="tm-chips">
-          {tone.od && <Chip tone="accent" keyLabel="OD/DS" detail={`d${tone.od.drive}`}>{tone.od.type}</Chip>}
-          {tone.fx.map((f) => <Chip key={f.slot} keyLabel={f.slot} detail={f.detail}>{f.name}</Chip>)}
-        </div>
-      )}
-      <Timeline duration={duration} segments={tone.segments} alt={ctl === "on"} />
-    </div>
-  );
-}
 
 export type PatchCardProps = {
   patch: PatchResult;
   duration: number;
-  /** shows a "Kalibre et" button per tone (the patch must be on the unit) */
+  /** shows "Kalibre et" for the tone on screen (the patch must be on the unit or in the edit buffer) */
   onCalibrate?: (tone: Tone, ctl: "off" | "on" | undefined) => void;
   calibrateDisabled?: boolean;
 };
-/** One patch the engine built: slot, name readout, one column per tone (two for a CTL patch). */
+/** One patch the engine built: slot, LCD name, the tone as a pedal chain, where it plays. Dual patches flip with CTL. */
 export function PatchCard({ patch: p, duration, onCalibrate, calibrateDisabled }: PatchCardProps) {
+  const [ctl, setCtl] = React.useState<"off" | "on">("off");
   const onDevice = !!p.slot?.startsWith("U");
   const [a, b] = p.tones;
+  const tone = p.dual && ctl === "on" ? b : a;
+  const other = p.dual ? (ctl === "on" ? a : b) : undefined;
+  const id = React.useId();
   return (
     <article className="tm-patch">
       <header className="tm-patch__head">
-        <span className={`tm-patch__slot${onDevice ? "" : " tm-patch__slot--none"}`}>{onDevice ? p.slot : "—"}</span>
-        <div className="tm-patch__meta">
-          <span className="tm-patch__lcd">{p.name}</span>
-          <span className="tm-field__hint">
-            {p.dual ? `İki ton tek patch'te: CTL'ye basınca ${roleName(b.role).toLowerCase()} tona geçer` : `${roleName(a.role)} tonu`}
+        <span className={cx("tm-patch__slot t-readout-lg", !onDevice && "is-none")} title={onDevice ? "Yazıldığı slot" : undefined}>
+          {onDevice ? p.slot : p.slot ? "TEMP" : "—"}
+        </span>
+        <div className="tm-patch__name">
+          <Lcd>{p.name}</Lcd>
+          <span className="t-small tm-patch__sub">
+            {p.dual ? `${roleName(a.role)} + ${roleName(b.role)} · CTL ile geçiş` : `${roleName(a.role)} tonu`}
           </span>
         </div>
-        {onDevice ? <Chip tone="ok">Cihaza yazıldı</Chip>
-          : p.slot ? <Chip tone="warn">Edit buffer'da, kaydedilmedi</Chip>
-            : <Chip icon="file">Sadece dosya</Chip>}
+        <div className="tm-patch__state">
+          {onDevice ? <Chip tone="ok" led="ok">Cihaza yazıldı</Chip>
+            : p.slot ? <Chip tone="warn" led="warn">Edit buffer'da</Chip>
+              : <Chip icon="file">Sadece dosya</Chip>}
+        </div>
       </header>
-      <div className={`tm-patch__tones${p.dual ? " tm-patch__tones--dual" : ""}`}>
-        {p.dual
-          ? <>
-            <ToneBlock tone={a} duration={duration} ctl="off" other={b} calibrateDisabled={calibrateDisabled}
-              onCalibrate={onCalibrate && (() => onCalibrate(a, "off"))} />
-            <ToneBlock tone={b} duration={duration} ctl="on" other={a} calibrateDisabled={calibrateDisabled}
-              onCalibrate={onCalibrate && (() => onCalibrate(b, "on"))} />
-          </>
-          : <ToneBlock tone={a} duration={duration} calibrateDisabled={calibrateDisabled}
-            onCalibrate={onCalibrate && (() => onCalibrate(a, undefined))} />}
+
+      <div className="tm-patch__bar">
+        {p.dual ? (
+          <Segmented<"off" | "on"> name={`ctl-${id}`} value={ctl} onChange={setCtl} size="sm"
+            options={[{ value: "off", label: `CTL kapalı · ${roleName(a.role)}` }, { value: "on", label: `CTL açık · ${roleName(b.role)}` }]} />
+        ) : <span />}
+        <div className="tm-patch__facts t-small">
+          <span><Icon name="wave" /> {driveName(tone.drive)}</span>
+          <span>{tone.stereo}</span>
+        </div>
+        {onCalibrate && (
+          <Button size="sm" icon="ear" onClick={() => onCalibrate(tone, p.dual ? ctl : undefined)} disabled={calibrateDisabled}
+            title="Bu tonu GT-1'den çal; USB kaydı şarkıdaki gitarla karşılaştırılır">
+            Çalarak karşılaştır
+          </Button>
+        )}
+      </div>
+
+      <SignalChain tone={tone} compareTo={other} />
+
+      {tone.claude && (
+        <div className="tm-patch__claude">
+          <Chip icon="sparkle" tone="info">Claude · {CONF[tone.claude.confidence]}</Chip>
+          <p className="t-small">{tone.claude.why}</p>
+        </div>
+      )}
+
+      <div className="tm-patch__map">
+        <SongMap duration={duration}
+          lanes={p.dual
+            ? [{ label: roleName(a.role), segments: a.segments, tone: "song" }, { label: roleName(b.role), segments: b.segments, tone: "you" }]
+            : [{ label: roleName(a.role), segments: a.segments, tone: "song" }]} />
+        {p.dual && p.assigns.length > 0 && (
+          <details className="tm-patch__assigns">
+            <summary className="t-small">CTL ile değişen {p.assigns.length} ayar</summary>
+            <ul className="t-small">{p.assigns.map((s) => <li key={s}>{s}</li>)}</ul>
+          </details>
+        )}
       </div>
     </article>
-  );
-}
-
-export type SlotGridProps = {
-  slots: SlotInfo[] | null;          // null = still reading
-  target?: string;
-  current?: string;
-  onPick?: (slot: string) => void;
-};
-/** All 99 user slots. Target = where the next run writes; current = selected on the unit. */
-export function SlotGrid({ slots, target, current, onPick }: SlotGridProps) {
-  if (!slots) {
-    return (
-      <div className="tm-slots" aria-busy="true">
-        {Array.from({ length: 99 }, (_, i) => (
-          <div key={i} className="tm-slot tm-slot--loading">
-            <span className="tm-slot__no">U{String(i + 1).padStart(2, "0")}</span>
-            <span className="tm-slot__name"> </span>
-            <span className="tm-slot__amp">&nbsp;</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return (
-    <div className="tm-slots">
-      {slots.map((s) => (
-        <button key={s.slot} type="button" onClick={() => onPick?.(s.slot)} title={`${s.name.trim()} · ${s.amp} G${s.gain}`}
-          className={`tm-slot${s.slot === target ? " tm-slot--target" : ""}${s.slot === current ? " tm-slot--current" : ""}`}>
-          <span className="tm-slot__no">{s.slot}</span>
-          <span className="tm-slot__name">{s.name.trimEnd() || " "}</span>
-          <span className="tm-slot__amp">{s.amp}{s.dual ? " · CTL" : ""}</span>
-        </button>
-      ))}
-    </div>
   );
 }

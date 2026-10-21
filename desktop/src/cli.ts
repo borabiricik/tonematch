@@ -1,18 +1,33 @@
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { invoke as tauriInvoke } from "@tauri-apps/api/core";
+import { listen as tauriListen } from "@tauri-apps/api/event";
 
 // One tonematch CLI process at a time (the GT-1's MIDI port can only have one owner); later calls queue.
 // `--json` commands end with one "@@RESULT {...}" or "@@ERROR {...}" line; everything else is log, except
 // "@@<KIND> {...}" stream lines (e.g. @@TUNER readings): they go to the job's onLine only, not to the console.
+// Demo mode swaps the Tauri side for src/demo/mock.ts (same commands, same output, no GT-1).
 
 type LineEvent = { job: number; stream: "stdout" | "stderr"; line: string };
 type ExitEvent = { job: number; code: number | null };
 
 export type Line = { text: string; stream: "stdout" | "stderr" };
 export type Outcome<T> = { code: number | null; result?: T; error?: { message: string; kind: string }; cancelled: boolean };
-export type EnvInfo = { project: string; venv: string; uv: string | null; ready: boolean; platform: string };
+export type EnvInfo = { project: string; venv: string; uv: string | null; ready: boolean; platform: string; demo?: boolean };
 
 type Job = { onLine: (l: Line) => void; done: (code: number | null) => void; result?: unknown; error?: Outcome<unknown>["error"] };
+type Invoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
+type Listen = (event: string, cb: (e: { payload: unknown }) => void) => Promise<unknown>;
+
+export const IN_TAURI = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+const DEMO_KEY = "demo";
+/** Demo mode: chosen in Settings, or forced when there is no Tauri side (plain browser). */
+export const DEMO = !IN_TAURI || (() => { try { return localStorage.getItem(DEMO_KEY) === "true"; } catch { return false; } })();
+export function setDemo(on: boolean) {
+  try { localStorage.setItem(DEMO_KEY, JSON.stringify(on)); } catch { /* storage off: stays as is */ }
+  location.reload();
+}
+
+let invoke: Invoke = tauriInvoke;
+let listen: Listen = tauriListen as unknown as Listen;
 
 const jobs = new Map<number, Job>();
 const early = new Map<number, (LineEvent | ExitEvent)[]>(); // events that beat run_cli's reply
@@ -46,13 +61,18 @@ function handle(ev: LineEvent | ExitEvent) {
 }
 
 export async function initCli() {
-  await listen<LineEvent>("cli-line", (e) => handle(e.payload));
-  await listen<ExitEvent>("cli-exit", (e) => handle(e.payload));
+  if (DEMO) {
+    const m = await import("./demo/mock");
+    invoke = m.mockInvoke;
+    listen = m.mockListen;
+  }
+  await listen("cli-line", (e) => handle(e.payload as LineEvent));
+  await listen("cli-exit", (e) => handle(e.payload as ExitEvent));
 }
 
 export const isBusy = () => current !== null;
-export const onBusy = (f: (busy: boolean) => void) => busyListeners.add(f);
-export const onLog = (f: (l: Line | { cmd: string }) => void) => logListeners.add(f);
+export const onBusy = (f: (busy: boolean) => void) => { busyListeners.add(f); return () => { busyListeners.delete(f); }; };
+export const onLog = (f: (l: Line | { cmd: string }) => void) => { logListeners.add(f); return () => { logListeners.delete(f); }; };
 
 // Jobs run one after another: a run started while the device list is being read simply waits for it.
 let queue: Promise<unknown> = Promise.resolve();
@@ -103,3 +123,5 @@ export async function stop() {
 
 export const environment = () => invoke<EnvInfo>("environment");
 export const cachedSlots = <T>() => invoke<{ updated: number | null; slots: T[] }>("cached_slots");
+/** Show a file (relative paths are under the repo) in Finder / Explorer. */
+export const reveal = (path: string) => invoke<void>("reveal_path", { path });

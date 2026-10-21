@@ -17,10 +17,13 @@ const flat = (fam) => (t[fam]?.tokens ?? []).map((x) => `  --${x.name}: ${x.valu
 const out = [];
 out.push(`/* ${t.name} — generated from design/tokens.json by scripts/build-tokens.mjs. Do not edit. */`);
 for (const f of t.type.fonts) {
-  out.push(`@font-face {\n  font-family: "${f.family}";\n  src: url("../assets/${f.file}") format("woff2");\n` +
-    `  font-weight: ${f.weight};\n  font-stretch: 62% 125%;\n  font-display: block;\n}`);
+  const lines = [`font-family: "${f.family}"`, `src: url("../assets/${f.file}") format("woff2")`, `font-weight: ${f.weight}`];
+  if (f.stretch) lines.push(`font-stretch: ${f.stretch}`);
+  if (f.unicodeRange) lines.push(`unicode-range: ${f.unicodeRange}`);
+  lines.push("font-display: block");
+  out.push(`@font-face {\n  ${lines.join(";\n  ")};\n}`);
 }
-out.push(`:root {\n${block(first)}\n${flat("spacing")}\n${flat("radius")}\n` +
+out.push(`:root {\n${block(first)}\n  color-scheme: ${first};\n${flat("spacing")}\n${flat("radius")}\n${flat("motion")}\n` +
   Object.entries(t.type.families).map(([k, v]) => `  --font-${k}: ${v};`).join("\n") + "\n}");
 for (const theme of rest) {
   // "system" = follow the OS; an explicit data-theme wins both ways
@@ -28,12 +31,14 @@ for (const theme of rest) {
     block(theme).replace(/^/gm, "  ") + `\n    color-scheme: ${theme};\n  }\n}`);
   out.push(`:root[data-theme="${theme}"] {\n${block(theme)}\n  color-scheme: ${theme};\n}`);
 }
+const CSS_PROPS = { fontStretch: "font-stretch", letterSpacing: "letter-spacing", textTransform: "text-transform",
+  fontVariantNumeric: "font-variant-numeric" };
 for (const g of t.type.groups) {
   for (const s of g.styles) {
     const fam = s.family ?? g.family;
     const lines = [`font-family: var(--font-${fam})`, `font-size: ${s.fontSize}`, `line-height: ${s.lineHeight}`,
       `font-weight: ${s.fontWeight}`];
-    if (s.letterSpacing) lines.push(`letter-spacing: ${s.letterSpacing}`);
+    for (const [k, prop] of Object.entries(CSS_PROPS)) if (s[k]) lines.push(`${prop}: ${s[k]}`);
     out.push(`.t-${s.name} {\n  ${lines.join(";\n  ")};\n}`);
   }
 }

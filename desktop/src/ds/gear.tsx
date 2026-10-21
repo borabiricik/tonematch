@@ -135,9 +135,11 @@ export type SlotGridProps = {
   /** names matching this filter stay lit, the rest dim */
   filter?: string;
   onPick?: (slot: string) => void;
+  /** double-click: act on the slot (the app selects it on the unit) */
+  onActivate?: (slot: string) => void;
 };
 /** The unit's 99 user slots in banks of 10 rows. Target = where the next run writes; current = selected on the unit. */
-export function SlotGrid({ slots, target, current, selected, filter, onPick }: SlotGridProps) {
+export function SlotGrid({ slots, target, current, selected, filter, onPick, onActivate }: SlotGridProps) {
   const q = (filter ?? "").trim().toLowerCase();
   if (!slots) {
     return (
@@ -155,6 +157,7 @@ export function SlotGrid({ slots, target, current, selected, filter, onPick }: S
         const match = !q || name.toLowerCase().includes(q) || s.amp.toLowerCase().includes(q) || s.slot.toLowerCase() === q;
         return (
           <button key={s.slot} type="button" role="option" aria-selected={s.slot === selected} onClick={() => onPick?.(s.slot)}
+            onDoubleClick={onActivate && (() => onActivate(s.slot))}
             className={cx("tm-slot", s.slot === target && "is-target", s.slot === current && "is-current", s.slot === selected && "is-selected", !match && "is-dim")}
             title={`${s.slot} · ${name || "(boş)"} · ${s.amp} G${s.gain}`}>
             <span className="tm-slot__no t-readout">{s.slot}</span>

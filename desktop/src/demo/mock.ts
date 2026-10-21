@@ -17,6 +17,7 @@ let calRound = 0;
 
 const emit: Emit = (event, payload) => listeners.get(event)?.forEach((f) => f({ payload }));
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const PITCH = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 export async function mockListen(event: string, cb: (e: { payload: unknown }) => void) {
   if (!listeners.has(event)) listeners.set(event, new Set());
@@ -165,10 +166,16 @@ function start(id: number, args: string[]) {
           out(`@@TUNER ${JSON.stringify({ kind: "multi", string: s, note: notes[6 - s], cents: c, in_tune: Math.abs(c) <= 3 })}`);
         }
       } else {
-        // a string being tuned up: far flat, close, then settling in
-        const phase = (t % 120) / 120;
-        const c = phase < 0.1 ? null : Math.round(-40 * Math.exp(-phase * 5) + 2 * Math.sin(t / 3));
-        out(`@@TUNER ${JSON.stringify(c === null ? { kind: "single", note: null, cents: 0, in_tune: false } : { kind: "single", note: "A", cents: c, in_tune: Math.abs(c) <= 3 })}`);
+        // the six strings in turn, 6 to 1: pluck, far off, closing in, settled; one starts a semitone flat
+        // (the unit then shows the wrong note) and one sharp
+        const start = [-130, -35, 28, -60, 22, -45];
+        const k = Math.floor(t / 80) % 6;
+        const phase = (t % 80) / 80;
+        const off = Math.round(start[k] * Math.exp(-phase * 6) + 1.5 * Math.sin(t / 3));
+        const semis = Math.round(off / 100);
+        const pc = (PITCH.indexOf(notes[k]) + semis + 12) % 12;
+        const c = off - semis * 100;
+        out(`@@TUNER ${JSON.stringify(phase < 0.08 ? { kind: "single", note: null, cents: 0, in_tune: false } : { kind: "single", note: PITCH[pc], cents: c, in_tune: Math.abs(c) <= 3 })}`);
       }
       await sleep(110);
     }

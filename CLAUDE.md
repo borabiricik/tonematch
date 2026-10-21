@@ -25,7 +25,7 @@ patch'leri üreten ve cihaza yazan araç. Çalışır durumda (v0.1, 2026-10-17)
 | `docs/10-tuning.md` | akort tespiti, pitch shifter kuralları, kalibrasyon |
 | `docs/12-claude-mode.md` | isteğe bağlı Claude modu: akış, şema, arka uçlar |
 | `docs/11-desktop.md` | Tauri masaüstü arayüzü (Windows + macOS), CLI'yi alt süreç olarak çalıştırır |
-| `docs/13-ui-ux.md` | arayüz v2 "Signal Path": ekranlar, tasarım kararları, kısayollar, demo modu, tasarım sistemi |
+| `docs/13-ui-ux.md` | arayüz v2 "Signal Path": ekranlar, tasarım kararları, kısayollar, demo modu, tasarım sistemi, 3D tuner |
 
 ## Altın kurallar
 1. **Cihaz parametreleri tek kaynaktan:** `src/tonematch/device/gt1/data/gt1_spec.json` (üretilmiş;

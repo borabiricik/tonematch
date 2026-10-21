@@ -8,5 +8,6 @@ export default defineConfig({
     strictPort: true,
     watch: { ignored: ["**/src-tauri/**"] },
   },
-  build: { target: "es2022", outDir: "dist" },
+  // three.js (the 3D tuner) is its own lazy chunk of ~600 kB; it only loads on the Tuner page
+  build: { target: "es2022", outDir: "dist", chunkSizeWarningLimit: 700 },
 });

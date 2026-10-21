@@ -4,7 +4,7 @@ import { Button, Chip, Card, EmptyState, Knob, Lcd, Led, Notice, SlotGrid, TextI
 import { friendly, type Device } from "./state";
 
 // The unit's 99 user slots (last known list, refreshed in the background), one slot's details,
-// selecting a slot on the unit (`gt1 select`), making it the next run's target, and a full backup.
+// selecting a slot on the unit (`gt1 select`, also by double-clicking it), making it the next run's target, and a full backup.
 
 type Props = {
   device: Device;
@@ -39,6 +39,16 @@ export function DeviceView({ device, busy, target, refresh, select, onTarget }: 
     setBackup(null);
     if (r.code === 0) toast({ tone: "ok", title: "99 slotun hepsi yedeklendi", text: path });
     else toast({ tone: "danger", title: "Yedek alınamadı", text: "Ayrıntı çıktıda." });
+  }
+
+  // selecting only loads the slot into the unit's edit buffer; nothing is written
+  const canSelect = (s: string) => device.connected && !busy && !selecting && s !== device.current;
+  async function selectOn(s: string) {
+    if (!canSelect(s)) return;
+    setPicked(s);
+    setSelecting(true);
+    await select(s);
+    setSelecting(false);
   }
 
   const has = device.slots.length > 0;
@@ -90,10 +100,11 @@ export function DeviceView({ device, busy, target, refresh, select, onTarget }: 
               <span className="device__legend t-small">
                 <span><span className="legend-target" /> Hedef</span>
                 <span><Led state="on" /> Cihazda seçili</span>
+                <span>Çift tık: cihazda seç</span>
               </span>
             </div>
             <SlotGrid slots={has ? device.slots : null} target={target} current={device.current} selected={picked ?? undefined} filter={filter}
-              onPick={setPicked} />
+              onPick={setPicked} onActivate={selectOn} />
           </div>
 
           <aside className="inspector" aria-label="Seçili slot">
@@ -114,7 +125,7 @@ export function DeviceView({ device, busy, target, refresh, select, onTarget }: 
                 <Knob label="Gain" value={slot.gain} />
                 <div className="inspector__actions">
                   <Button block icon="play" disabled={!device.connected || busy || slot.slot === device.current} loading={selecting}
-                    onClick={async () => { setSelecting(true); await select(slot.slot); setSelecting(false); }}>
+                    onClick={() => selectOn(slot.slot)}>
                     {slot.slot === device.current ? "Cihazda zaten seçili" : "Cihazda seç ve dinle"}
                   </Button>
                   <Button block variant={slot.slot === target ? "secondary" : "primary"} icon="wave" disabled={slot.slot === target}

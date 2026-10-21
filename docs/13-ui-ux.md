@@ -16,6 +16,10 @@ Tauri / CLI köprüsü için `11-desktop.md`.
 |---|---|---|
 | `frontend-design` | `claude-plugins-official` (Anthropic) | özgün görsel yön, tipografi, "şablon gibi görünme" kontrolü |
 | `ui-ux-pro-max` | `nextlevelbuilder/ui-ux-pro-max-skill` (marketplace eklendi) | yerel arama yapılabilen veritabanı: stiller, paletler, font eşleşmeleri, 119 UX kuralı, teslim öncesi kontrol listesi |
+| 16 × `threejs-*` | `OpenAEC-Foundation/Three.js-Claude-Skill-Package` (MIT, commit `6c190f0`), `.claude/skills/` içine kopyalandı | 3D tuner (2026-10-22): renderer, geometri, materyal, ışık, kontroller, raycaster, animasyon, performans/dispose, render hataları; R3F/drei de var (kullanılmadı) |
+
+Three.js paketinden IFC, XR, fizik, WebGPU, ses ve agent skill'leri alınmadı (bu işe yaramıyor). Paket sadece
+markdown; kurmadan önce script/hook olmadığı kontrol edildi. Lisans: `.claude/skills/THREEJS-SKILLS-LICENSE`.
 
 `ui-ux-pro-max`'in önerileri bu ürüne genel kaldı (festival fontları, OLED siyahı). Kontrol listesi olarak
 kullanıldı (kontrast, odak, dokunma alanı, reduced-motion, ilerleme göstergesi, onay pencereleri); görsel yön
@@ -88,12 +92,69 @@ Rail 1100px altında 64px ikon şeridine iner. Kalibrasyon tam pencere bir **she
 - **Cihaz** (`app/DeviceView.tsx`). Cihaz kartı (bağlantı, seçili patch, edit buffer; PREAMP = SYSTEM uyarısı),
   99 slot ızgarası (ad / amfi / slot ile filtre; hedef, cihazda seçili, seçili işaretleri), sağda **inceleme
   paneli**: LCD adı, amfi, gain knob'u, CTL; "Cihazda seç ve dinle" (**yeni CLI komutu `gt1 select`**, hiçbir
-  şey yazmaz) ve "Sonraki tonu buraya yaz". "Tümünü yedekle" ilerlemeyi n/99 gösterir.
-- **Tuner** (`app/TunerView.tsx`, sahne modu). Dev nota, cent ibresi (±3 cent penceresi), yön cümlesi
+  şey yazmaz; ızgarada slota **çift tık** da aynısını yapar, 2026-10-22) ve "Sonraki tonu buraya yaz". "Tümünü yedekle" ilerlemeyi n/99 gösterir.
+- **Tuner** (`app/TunerView.tsx`, sahne modu). Varsayılan görünüm **3D** (aşağıda "3D tuner"); "Klasik" anahtarı eski
+  düz görünüme döner (tercih saklanır). Dev nota, cent ibresi (±3 cent penceresi), yön cümlesi
   ("Pes: teli sıkıştır" / "Tiz: teli gevşet" / "Akortta"); çoklu modda 6 dikey gösterge. Altta gitarın akordu
   (E standart / Drop D) ve tellerin hedef notaları. Space aç/kapat; sayfadan çıkınca cihaz çalma moduna döner.
 - **Ayarlar** (`app/SettingsView.tsx`). Tema, demo modu, motorun yeri (proje, venv, uv, platform), kütüphaneyi
   temizle, klavye kısayolları.
+
+## 3D tuner (2026-10-22)
+Kullanıcının isteği: tuner için kendi gitarının (Epiphone Les Paul, Cardinal Red) birebir 3D modeli; fareyle
+sürükleyince 360° dönsün; tuner açılınca kafaya (headstock) zoom; çalınan telin mandalının hangi yöne döneceği
+3D ve animasyonlu gösterilsin.
+
+- **Model** (`app/guitar/lesPaul.ts`): dosya yok, kodla kuruluyor (prosedürel). Cardinal Red'in tek üretildiği model
+  **Les Paul Standard '50s** (2020+ "Inspired by Gibson") olarak alındı. Gerçek ölçüler: 24.75" menzil, 43.8 cm
+  gövde, 13" alt bölüm, 1.69" eşik, köprüde 2 1/16" tel aralığı, 22 perde, 17° kafa açısı, kemerli akçaağaç kapak.
+  Görünüş: parlak Cardinal Red (gövde, sap, kafa arkası), tek kat krem bağlama (kapak ve klavye), defne klavye,
+  trapez inlay, Kalamazoo "open book" kafa, siyah kafa yüzü + Epiphone logosu, nikel kapaklı iki humbucker + krem
+  çerçeve, krem pickguard, Tune-o-matic + stopbar, altın top-hat düğmeler, krem seçici başı, Keystone mandallar.
+  **Gövde silüeti (2026-10-22, kullanıcı geri bildirimi: bel/boğum yanlış, sap kısa):** artık gerçek bir Les Paul
+  şablonundan: [cho2/guitar-shape](https://github.com/cho2/guitar-shape) `les-paul.svg` (**CC BY-SA 4.0**; türetilen
+  nokta listesi `lesPaul.ts` içinde, kaynak ve lisans yorumda). 43.8 cm boya ölçeklenince eni 33.06 cm (13") çıkıyor,
+  yani oranlar gerçek gövdeyle aynı. Sap gövdeden 16. perdede çıkar (eskiden ~13. perde: sap ~3.5 cm kısaydı);
+  kuyruk köprünün 18.9 cm gerisinde, toplam boy ~100 cm (gerçek: 39.5"). İki tarafta bel y≈10'da (tiz taraftaki,
+  oturunca bacağa gelen boğum), cutaway tabanı 22. perde hizasında. Kemerli kapak artık kenara uzaklıktan
+  hesaplanıyor (üçgenleme + 4 kat alt bölme, normaller yükseklik alanından: parlak boyada pürüzsüz yansıma);
+  pickguard, düğmeler, seçici ve askı pimi yeni silüete göre yerleşti.
+  **Kafa ve detaylar (2026-10-22, geri bildirim: seçicide kesilme, rondela yazısız, kafa şekli tutmuyor):** resmi
+  spesifikasyona (gibson.com, Les Paul Standard '50s Cardinal Red) göre: kafa silüeti Wikimedia Commons
+  "Gibson-headstock-LP.svg" (GreyCat, **CC BY-SA 3.0**; Epiphone "60s Kalamazoo" aynı open-book): eşikten sonra
+  açılan boğaz, düz kenarlar, üstte iki tümsek + V çentik; 17.9 cm boy, çizim dar olduğu için enine %10 açıldı
+  (ölçülen 73 mm orta genişlik). Logo sedef (iridescence), "Les Paul Model" altın serigrafi, truss rod kapağı
+  2 katlı siyah çan + "Standard" + 3 vida. Seçici rondelası krem + altın RHYTHM / TREBLE, artık kemerli kapağa
+  oturuyor (düzdü, eğime gömülüp "kesik" görünüyordu); kol ve krem başlık yüzey normaline dik. Top-hat düğmelerde
+  gösterge ve VOLUME / TONE kapakları, eğime göre oturuyor. Yeni parçalar: krem kare jak plakası (tiz yan),
+  üst bölüm askı pimi, arkada siyah kontrol kapakları. Tekerlek artık imlecin gösterdiği yere yakınlaşır. Fotoğraf taraması değil; gerçek bir model
+  dosyası (GLB) ileride eklenirse aynı arayüzle (`pegAnchor`, `update`) değiştirilebilir.
+- **Etkileşim** (`app/guitar/GuitarStage.tsx`, three.js r186, OrbitControls): sürükle = her yöne döndür (pan yok),
+  tekerlek = yakınlaş, çift tık = görünümü sıfırla, mandala / tele tıkla = o teli sabitle (tek tel modu).
+  Tuner açılınca kamera 1.1 sn'de kafaya uçar; kapanınca bütün gitara döner. Yakın plan, çalınan telin tarafına
+  yatar (bas teller üstten, tiz teller alttan) ki düğme uçtan görünsün; oyuncu kamerayı tuttuysa otomatik hareket
+  durur (çift tık geri verir). `prefers-reduced-motion`: uçuş anında, oklar ve tel titreşimi durağan.
+- **Gösterim:** aktif telin mandalında iki ok: direğin etrafında (kafa yüzünde) ve düğmenin etrafında (mili
+  çevresinde); ikisi de dönme yönünde döner, sapma büyüdükçe hızlanır; direk ve düğme de o yönde döner. Renk
+  tuner'ın renkleri: uzak (>15 cent) `--danger`, yakın `--warning`, akortta `--success` (direkte halka, ok yok).
+  Tel parlar ve titrer. Etiket düğmenin yanında: "5. tel · A / sıkıştır". Çoklu modda altı mandal birden.
+- **Hangi yöne:** 3+3 kafada tel direğin iç tarafından çıkar → sıkıştırmak için bas direkler (6-5-4) kafa
+  yüzünden bakınca saat yönünün tersine, tiz direkler (3-2-1) saat yönünde döner (geometriden). Düğmeler için
+  yaygın kural kullanıldı: uçtan bakınca bas tarafı saat yönünün tersine, tiz tarafı saat yönünde. Bu ikincisi
+  dişli yönüne bağlı; kullanıcı gitarında ters görürse `lesPaul.ts` içindeki `BUTTON_TIGHTEN` işaretini çevirmek
+  yeter (direk okları değişmez). **Cihazla / gerçek gitarla doğrulanmadı.**
+- **Tel tespiti** (`src/tunerStrings.ts`, saf mantık): GT-1 tek tel modunda sadece en yakın nota + cent veriyor
+  (oktav yok, tel numarası yok). Tel = hedef notası en yakın olan; iki E (Drop D'de iki D) son çalınan tele göre
+  ayrılır, eşitse sıradaki ince tel. Sapma hedefe göre hesaplanır, yani tel yarım ton pesken cihaz D# gösterse
+  de "6. tel · sıkıştır" der (eski sürüm sadece cent'e bakıyordu). Otomatik tespit yanılırsa alttaki tel
+  düğmelerinden ya da modelden tıklayarak tel sabitlenir; tekrar tıklayınca otomatiğe döner.
+- **Performans:** three.js ayrı ve tembel yüklenen parça (~610 kB, sadece Tuner sayfasında), ~150 çizim çağrısı,
+  piksel oranı ≤ 2, sayfadan çıkınca her şey `dispose`. WebGL yoksa ya da bağlam kaybolursa uyarı + klasik tuner.
+- **Demo:** tek tel modunda demo sırayla 6→1 telleri akort ediyormuş gibi okuma üretir (biri yarım ton pes başlar,
+  ikisi tiz); cihazsız bütün akış görülebilir.
+- **Doğrulama (2026-10-22, tarayıcı + demo):** genel görünüm, 360° sürükleme (arka yüz), tuner açılınca kafaya zoom,
+  bas/tiz tarafına yatma, sıkıştır/gevşet/akortta, çoklu mod, iki tema. `tsc` temiz, `npm run build` geçti, tel
+  tespiti için hızlı kontrol betiği geçti (projede JS test altyapısı yok). Tauri penceresinde ve GT-1 ile denenmedi.
 
 ## Klavye
 | Kısayol | İş |
@@ -104,6 +165,7 @@ Rail 1100px altında 64px ikon şeridine iner. Kalibrasyon tam pencere bir **she
 | ⌘↵ | tonu çıkar |
 | ⌘J | çıktı çekmecesi |
 | Space | tuner aç/kapat · kalibrasyonda kaydı başlat / tekrar çal |
+| Çift tık (3D) | tuner'da görünümü sıfırla |
 | Esc | pencereyi kapat (kayıt sırasında değil) |
 
 Windows'ta ⌘ yerine Ctrl. Sayfa değişince odak sayfaya taşınır (ekran okuyucu duyurur, Space rail'e gitmez).

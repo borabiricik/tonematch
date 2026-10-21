@@ -24,7 +24,21 @@
      44.1 kHz stereo. Açık soru: ilk gerçek kayıtlarda stem (ayrılmış + master) ile direkt kayıt arasındaki
      sistematik farkı ölç (özellikle drive, bkz. `drive_index(for_gain)` notu); düzeltme katsayıları buna göre.
    - [x] Adım 3 (öne alındı, 2026-10-19): masaüstünde "Kalibre et" (geri sayım, canlı seviye, fark tablosu, tur
-     tur spektral mesafe). Sadece ölçüm; otomatik düzeltme (adım 2) gelince aynı panele "Uygula" eklenecek.
+     tur spektral mesafe).
+   - [x] Adım 2 (2026-10-22): düzeltme. `calibrate.corrections`: motorun kendi eğimleri (`match.build_patch`) ters
+     çevrilip sönümlenir (`DAMPING` 0.6, 2–3 turda yakınsar; tur başına `MAX_STEP`, motorun knob sınırları). Kısma
+     yönü `CUT_RATE` 0.5 ile yarım hızda (stem olduğundan karanlık / az sürülmüş okunur, motorla aynı asimetri);
+     BASS asla artmaz (bas sızıntısı); MIDDLE sınırdaysa kalan fark M.EQ MID'e (frekans 400 Hz–1.25 kHz ise).
+     İki tonlu patch'te düzeltme sadece ölçülen tarafa: CTL kapalı = alan + assign min, CTL açık = assign max,
+     assign'ı olmayan alana boş assign açılır (8'i doluysa not). Yazma sadece edit buffer'a, alan alan
+     (`GT1Client.write_fields`, geri okuma doğrulamalı); slot değişmez → yedek gerekmez, `gt1 save` ayrı ve onaylı.
+     Uygulamadan önce cihazdaki patch adı ve her knob'un "önceki" değeri kontrol edilir (cihazdan çevrilmiş knob'a
+     dokunulmaz). `calibrate --apply`, `gt1 apply <kayıt> [--undo]`; masaüstünde "Uygula" / "Geri al".
+     Kayıt dosyası önerileri ve `apply_log`'u tutar (adım 4 için). `[VERIFY ON DEVICE]`: CTL açıkken assign max
+     yazılınca ses hemen mi değişiyor, yoksa CTL kapat-aç mı gerekiyor (arayüz şimdilik kapat-aç diyor).
+     Alan alan yazma cihazda doğrulandı (docs/01); doğrulama tutmazsa edit buffer eski haline yazılır.
+   - [ ] Adım 4: öğrenme. Kayıtlardaki tekrarlayan farklar ve uygulanan/geri alınan düzeltmeler → `match.py`
+     eğimleri, `CUT_RATE` ve stem↔direkt kayıt drive farkı.
 1. **Kulak geri bildirimi döngüsü**: kullanıcı yorumlarına göre (ör. "fazla bas", "gain az") hızlı düzeltme
    komutu: `tonematch tweak U20 --gain +10 --bass -5`; tekrarlayan geri bildirimlerle imza tablosunu kalibre et.
 2. **Eksik ölçümler** (kullanıcı onayı 2026-10-18):

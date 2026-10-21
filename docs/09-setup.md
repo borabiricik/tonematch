@@ -56,11 +56,14 @@ cd $HOME\OneDrive\Desktop\gt1-tone-matcher
 # Arama ile
 .\tonematch.ps1 run "ytsearch1:Metallica Enter Sandman"
 
-# Çalarak kalibrasyon (adım 1: sadece ölçüm, cihaza yazmaz). Patch'i seç, geri sayımdan sonra parçayı ~20 sn çal;
-# GT-1'in USB kaydı şarkının gitarıyla karşılaştırılır (drive, orta/presence/gövde/fizz, 1/3 oktav, delay/reverb).
+# Çalarak kalibrasyon. Patch'i seç, geri sayımdan sonra parçayı ~20 sn çal; GT-1'in USB kaydı şarkının gitarıyla
+# karşılaştırılır (drive, orta/presence/gövde/fizz, 1/3 oktav, delay/reverb) ve knob düzeltmesi önerilir.
+# --apply önerilen düzeltmeyi edit buffer'a yazar (slot değişmez); tekrar çal, beğenince `gt1 save`.
 # İki tonlu patch'te ikinci tonu (ör. clean) ölçerken CTL açık olmalı; komut hatırlatır.
 .\tonematch.ps1 calibrate "<url>" --role rhythm --slot U20
+.\tonematch.ps1 calibrate "<url>" --role rhythm --apply          # 2. tur: --slot yok, edit buffer korunur
 .\tonematch.ps1 calibrate "<url>" --role clean --seconds 30
+.\tonematch.ps1 gt1 apply <kayıt>.json [--undo]                   # bir kalibrasyonun önerisini sonradan uygula / geri al
 # kayıtlar ve sonuçlar: %LOCALAPPDATA%\tonematch\data\tracks\<id>\calib\<rol>_<zaman>.wav/.json
 
 # Cihaz

@@ -24,6 +24,10 @@ Bu dosyadaki her şey **2026-10-17'de kullanıcının cihazında** doğrulandı 
 - Edit buffer (temporary patch) `60 00 xx xx`, user patch i (0-tabanlı) `10 ii xx xx`.
 - Patch = 24 blok. **Son blok (`.. 11 00`) cihazda 64 değil 26 byte** — okuma kısa yanıtı kabul eder.
 - Patch okuma ~2.5 s, yaz+kaydet+doğrula ~3 s.
+- Edit buffer'a **tek alan** yazılabilir (2026-10-22, Mac): tek byte DT1 blok ortasında da geçerli, okuma da öyle
+  (3 alan yaz + geri oku 0.26 s, `GT1Client.write_fields`). İki istisna: 14-bit değerin (`_h`/`_l`) sadece `_l`
+  byte'ından başlayan yazma **ve okuma yok sayılır** → çift tek mesajda `_h`'den yazılır; parametrenin aralığı
+  dışındaki değer yazılmaz (ör. ON/OFF hedefli assign'ın max'ına 2).
 
 ## GT-1'de OLMAYAN bloklar (önemli)
 BTS'in adres haritası GT-100/GT-001 ile ortak; bazı bloklar haritada var ama GT-1'de yok:

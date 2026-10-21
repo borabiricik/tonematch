@@ -149,5 +149,14 @@ export function demoCalibration(role: string, round: number, patch: string, amp:
     compare: { diff, third_oct_diff, spectral_distance_db: dist, hints, close: Object.keys(diff).filter((key) => Math.abs(diff[key as keyof typeof diff]) < DEAD[key]) },
     played_seconds: 19.2, level_db: -14.3, warnings: round === 0 ? ["Demo modu: bu sonuç gerçek bir kayıttan değil, örnek veriden geliyor."] : [],
     wav: `data/tracks/demo/calib/${role}_demo.wav`, device: "IN (GT-1)",
+    record: `data/tracks/demo/calib/${role}_demo_${round}.json`,
+    // the engine's slopes, damped (calibrate.corrections): mid / presence up, a little less gain
+    moves: [
+      { field: "preamp_a_middle", label: "MIDDLE", from: 51, to: 51 + Math.round(4.7 * k) },
+      { field: "preamp_a_treble", label: "TREBLE", from: 48, to: 48 + Math.round(4.7 * k) },
+      { field: "preamp_a_presence", label: "PRESENCE", from: 18, to: 18 + Math.round(3.5 * k) },
+      { field: "preamp_a_gain", label: "GAIN", from: 62, to: 62 - Math.round(2.2 * k) },
+    ].filter((m) => m.to !== m.from),
+    move_notes: [] as string[],
   };
 }

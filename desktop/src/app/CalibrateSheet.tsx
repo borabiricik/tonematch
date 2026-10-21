@@ -9,8 +9,9 @@ import { friendly, typing } from "./state";
 // Play-to-calibrate (`tonematch calibrate --json`, docs/07 item 0). The CLI selects the patch, counts down,
 // records the GT-1's USB output and compares it with the song's guitar; we draw its @@CALIB stream and result.
 // Stage mode: the player holds a guitar and looks from a distance, so numbers are big and Space starts a take.
-// Measuring writes nothing; "Slota kaydet" saves the edit buffer (knobs turned on the unit) with `gt1 save`:
-// backup, write, read back + verify, refused when the unit has another patch selected (--expect-name).
+// Measuring writes nothing. "Uygula" puts the suggested knob moves into the edit buffer (`gt1 apply <record>`,
+// "Geri al" = --undo); "Slota kaydet" saves the edit buffer (applied moves + knobs turned on the unit) with
+// `gt1 save`: backup, write, read back + verify, refused when the unit has another patch selected (--expect-name).
 
 export type CalTarget = {
   source: string; role: string; slot: string | null; ctl: "off" | "on" | undefined; patch: string; amp: string; title: string;
@@ -37,6 +38,14 @@ type CalResult = {
     hints: { axis: Axis; value: number; knob: string; direction: "up" | "down"; text: string }[];
   };
   played_seconds: number; level_db: number; warnings: string[]; wav: string;
+  /** the calibration record: `gt1 apply` reads the moves from it */
+  record: string; moves: Move[]; move_notes: string[];
+};
+type Move = { field: string; label: string; from: number; to: number };
+type ApplyResult = {
+  undo: boolean; patch: string; ctl_on: boolean; applied: Move[]; skipped: string[]; notes: string[];
+  /** CTL-on side of a dual patch: the new assign value takes effect after CTL off -> on */
+  retoggle_ctl: boolean;
 };
 
 type Ready = Extract<CalEvent, { phase: "ready" }>;
@@ -68,6 +77,8 @@ export function CalibrateSheet({ target, fallbackSlot, onClose, onSaved }: Props
   const [saveSlot, setSaveSlot] = React.useState(() => (target?.slot ? Number(target.slot.slice(1)) : fallbackSlot));
   const [confirm, setConfirm] = React.useState<null | "save" | "close">(null);
   const [saving, setSaving] = React.useState(false);
+  const [applying, setApplying] = React.useState(false);
+  const [applied, setApplied] = React.useState<ApplyResult | null>(null); // moves of the shown round in the edit buffer
   const [state, setState] = React.useState<State>({ kind: "intro" });
   const [round, setRound] = React.useState(0);
   const history = React.useRef<number[]>([]);
@@ -81,7 +92,7 @@ export function CalibrateSheet({ target, fallbackSlot, onClose, onSaved }: Props
     return () => clearInterval(t);
   }, [state.kind]);
 
-  const running = ["connecting", "countdown", "record", "measure"].includes(state.kind) || saving;
+  const running = ["connecting", "countdown", "record", "measure"].includes(state.kind) || saving || applying;
 
   // Space = start / play again, from across the room
   React.useEffect(() => {
@@ -103,6 +114,7 @@ export function CalibrateSheet({ target, fallbackSlot, onClose, onSaved }: Props
     if (!target) return;
     let ready: Ready | undefined = state.ready;
     setState({ kind: "connecting", ready });
+    setApplied(null);
     runningRef.current = true;
     const args = ["calibrate", target.source, "--role", target.role, "--seconds", seconds, "--json",
       // CTL is off after selecting a patch: give the player time to step on it for the second tone
@@ -138,6 +150,26 @@ export function CalibrateSheet({ target, fallbackSlot, onClose, onSaved }: Props
     }
   }
 
+  async function apply(record: string, undo: boolean) {
+    setApplying(true);
+    const r = await cli.run<ApplyResult>(["gt1", "apply", record, ...(undo ? ["--undo"] : []), "--json"]);
+    setApplying(false);
+    if (r.result) {
+      const a = r.result;
+      setApplied(undo || a.applied.length === 0 ? null : a);
+      const moved = a.applied.map((m) => `${m.label} ${m.from} → ${m.to}`).join(", ");
+      const left = [...a.skipped, ...a.notes].join(" ");
+      if (a.applied.length === 0) toast({ tone: "warn", title: "Hiçbir knob değişmedi", text: left || "Cihazdaki değerler öneriyle eşleşmedi." });
+      else toast({
+        tone: "ok", title: undo ? "Düzeltme geri alındı" : "Düzeltme cihaza yazıldı",
+        text: `${moved}.${a.retoggle_ctl ? " CTL'yi kapatıp tekrar aç ki yeni değer devreye girsin." : ""}${left ? ` ${left}` : ""}${undo ? "" : " Slot değişmedi: tekrar çal."}`,
+      });
+    } else {
+      const f = friendly(r.error?.message ?? `Çıkış kodu ${r.code}.`);
+      toast({ tone: f.kind === "warn" ? "warn" : "danger", title: f.title, text: f.text });
+    }
+  }
+
   async function save() {
     setConfirm(null); setSaving(true);
     const r = await cli.run<SaveResult>(["gt1", "save", slotLabel(saveSlot), "--expect-name", target!.patch, "--yes", "--json"]);
@@ -164,7 +196,7 @@ export function CalibrateSheet({ target, fallbackSlot, onClose, onSaved }: Props
       onClose={close} locked={running}
       actions={<>
         {!running && round > 0 && <Button icon="device" onClick={() => setConfirm("save")}>Slota kaydet…</Button>}
-        {running && !saving && <Button variant="danger" icon="stop" onClick={() => cli.cancel()}>Durdur</Button>}
+        {running && !saving && !applying && <Button variant="danger" icon="stop" onClick={() => cli.cancel()}>Durdur</Button>}
       </>}>
       <div className="cal">
         <div className="cal__stage" aria-live="polite">
@@ -179,7 +211,7 @@ export function CalibrateSheet({ target, fallbackSlot, onClose, onSaved }: Props
                 <Segmented name="cal-len" label="Kayıt uzunluğu" value={seconds} onChange={setSeconds} options={LENGTHS} />
                 <Button variant="primary" size="lg" icon="record" kbd="Space" onClick={start}>Kaydı başlat</Button>
               </div>
-              <p className="t-small cal__note">Sadece ölçülür; cihazda hiçbir şey değişmez. İstersen sonra knob'ları cihazdan çevirip tekrar çalarsın.</p>
+              <p className="t-small cal__note">Kayıt sadece ölçülür. Sonra önerilen düzeltmeyi <strong>Uygula</strong> ile cihaza yazabilir ya da knob'ları cihazdan kendin çevirip tekrar çalabilirsin.</p>
             </div>
           )}
 
@@ -207,7 +239,10 @@ export function CalibrateSheet({ target, fallbackSlot, onClose, onSaved }: Props
             </div>
           )}
 
-          {state.kind === "done" && <Report r={state.result} round={round} history={history.current} onAgain={start} />}
+          {state.kind === "done" && (
+            <Report r={state.result} round={round} history={history.current} onAgain={start}
+              applied={applied} applying={applying} onApply={(undo) => apply(state.result.record, undo)} />
+          )}
         </div>
 
         <aside className="cal__side">
@@ -233,14 +268,14 @@ export function CalibrateSheet({ target, fallbackSlot, onClose, onSaved }: Props
           )}
           <section className="cal__tip t-small">
             <Icon name="info" />
-            <span>Mesafe küçüldükçe tonun şarkıya yaklaşıyor. Beğendiğin ayarı <strong>Slota kaydet</strong> ile yaz (önce yedeklenir).</span>
+            <span>Mesafe küçüldükçe tonun şarkıya yaklaşıyor. <strong>Uygula</strong> sadece edit buffer'ı değiştirir; beğendiğin ayarı <strong>Slota kaydet</strong> ile yaz (önce yedeklenir).</span>
           </section>
         </aside>
       </div>
 
       <Dialog open={confirm === "save"} title={`${slotLabel(saveSlot)} üzerine kaydedilsin mi?`} confirmLabel="Kaydet"
         onCancel={() => setConfirm(null)} onConfirm={save}>
-        <p>Cihazdaki güncel ayar (<strong>{target.patch}</strong>, cihazdan çevirdiğin knob'larla) yazılır. Mevcut içerik önce yedeklenir, yazdıktan sonra geri okunup doğrulanır.</p>
+        <p>Cihazdaki güncel ayar (<strong>{target.patch}</strong>, uyguladığın düzeltme ve cihazdan çevirdiğin knob'larla) yazılır. Mevcut içerik önce yedeklenir, yazdıktan sonra geri okunup doğrulanır.</p>
         {!target.slot && (
           <div className="cal__saveslot"><span className="t-label">Hedef slot</span><SlotPicker value={saveSlot} onChange={setSaveSlot} /></div>
         )}
@@ -272,7 +307,12 @@ function Recording({ s }: { s: Extract<State, { kind: "record" }> }) {
   );
 }
 
-function Report({ r, round, history, onAgain }: { r: CalResult; round: number; history: number[]; onAgain: () => void }) {
+type ReportProps = {
+  r: CalResult; round: number; history: number[]; onAgain: () => void;
+  applied: ApplyResult | null; applying: boolean; onApply: (undo: boolean) => void;
+};
+
+function Report({ r, round, history, onAgain, applied, applying, onApply }: ReportProps) {
   const c = r.compare;
   const prev = history.length > 1 ? history[history.length - 2] : null;
   const better = prev !== null && c.spectral_distance_db < prev;
@@ -300,6 +340,34 @@ function Report({ r, round, history, onAgain }: { r: CalResult; round: number; h
       </div>
 
       {r.warnings.map((w) => <Notice key={w} tone="warn" title="Dikkat">{w}</Notice>)}
+
+      {(r.moves?.length ?? 0) > 0 && (
+        <section className="cal__block">
+          <div className="cal__fix-head">
+            <div>
+              <h3 className="t-heading">Önerilen düzeltme</h3>
+              <p className="t-small cal__muted">
+                {applied ? "Cihazın edit buffer'ında. Tekrar çal: mesafe küçüldüyse Slota kaydet, büyüdüyse geri al."
+                  : "Farkın bir kısmı (2–3 turda yaklaşsın diye). Sadece edit buffer'a yazılır, slot değişmez."}
+              </p>
+            </div>
+            {applied
+              ? <Button icon="history" loading={applying} onClick={() => onApply(true)}>Geri al</Button>
+              : <Button variant="primary" icon="check" loading={applying} onClick={() => onApply(false)}>Uygula</Button>}
+          </div>
+          <ul className="fixes">
+            {r.moves.map((m) => (
+              <li key={m.field} className={applied && !applied.applied.some((a) => a.field === m.field) ? "fix is-skipped" : "fix"}>
+                <span className="move__knob t-param">{m.label}</span>
+                <span className="t-readout fix__vals">{m.from} <Icon name="arrow-right" /> <strong>{m.to}</strong></span>
+                <span className="t-readout fix__delta">{signed(m.to - m.from, 0)}</span>
+              </li>
+            ))}
+          </ul>
+          {applied?.retoggle_ctl && <Notice tone="info" title="CTL'yi kapatıp tekrar aç">İkinci tonun yeni değeri CTL tekrar açılınca devreye girer.</Notice>}
+          {r.move_notes.map((n) => <p key={n} className="t-small cal__muted">{n}</p>)}
+        </section>
+      )}
 
       <section className="cal__block">
         <h3 className="t-heading">Ne yapmalı</h3>

@@ -65,4 +65,6 @@ BTS JSON formatı: `{"device":"GT-1","patchList":[{"params":{alan: ham değer}, 
 ## Cihazda gözlenen tuhaflıklar
 - EQ bloğu adresleri yazılamıyor (GT-1'de blok yok) → MASTER EQ kullanılır; doğrulamada `eq_*` alanları atlanır.
 - Son patch bloğu 26 byte döner.
+- 14-bit değerin `_l` byte'ından başlayan DT1/RQ1'e yanıt yok (yazma yok sayılır, okuma zaman aşımı); `_h`'den 2 byte
+  çalışır. Aralık dışı değer (ör. assign hedef max'ı hedefin aralığı dışında) yazılmaz (2026-10-22).
 - Slot kaydından hemen sonraki ilk okuma bazen zaman aşımına uğrar (flash yazımı) → yeniden deneme yeterli.

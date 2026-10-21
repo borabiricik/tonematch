@@ -319,6 +319,18 @@
 .move__knob { color: var(--ink); font-size: 12px; padding: 4px 8px; border-radius: var(--radius-xs); background: var(--well); border: 1px solid var(--line); }
 .move__text { color: var(--ink); }
 .move__val { color: var(--ink-muted); }
+.cal__fix-head { display: flex; align-items: start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cal__fix-head p { margin-top: 4px; max-width: 52ch; }
+.fixes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.fix {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 14px;
+  border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--line);
+}
+.fix__vals { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-muted); }
+.fix__vals strong { color: var(--ink); }
+.fix__vals .tm-icon { width: 14px; height: 14px; }
+.fix__delta { color: var(--ink-muted); }
+.fix.is-skipped { opacity: .45; }
 @media (max-width: 1060px) { .cal { grid-template-columns: 1fr; } .cal__side { position: static; } }
 
 /* ============================================================== Settings */

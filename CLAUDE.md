@@ -72,7 +72,8 @@ patch'leri üreten ve cihaza yazan araç. Çalışır durumda (v0.1, 2026-10-17)
 .\tonematch.ps1 gt1 save U20 [--expect-name "<patch>"]   # edit buffer'ı slota (yedek + doğrulama)
 .\tonematch.ps1 gt1 select U21                      # slotu cihazda seç (yazmaz)
 .\tonematch.ps1 gt1 tuner [--multi]                 # cihazın tuner'ı, canlı (Enter / Ctrl+C ile çık)
-.\tonematch.ps1 calibrate "<url>" --role rhythm --slot U20   # çalarak kalibrasyon: USB kaydı vs şarkı (şimdilik sadece ölçüm)
+.\tonematch.ps1 calibrate "<url>" --role rhythm --slot U20 [--apply]   # çalarak kalibrasyon: USB kaydı vs şarkı + knob düzeltmesi (edit buffer)
+.\tonematch.ps1 gt1 apply <kalibrasyon>.json [--undo]         # önerilen düzeltmeyi edit buffer'a yaz / geri al
 uv run pytest
 uv run python tools/calib.py <video_id> -v --from 3:20 --to 5:50
 uv run python tools/temp_roundtrip.py output\<dosya>.tsl

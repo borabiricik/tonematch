@@ -159,15 +159,22 @@ def calibrate(source: str = typer.Argument(..., help="the song (same URL / file 
               slot: str = typer.Option(None, "--slot", "-s", help="select this slot first (U20); default: current patch"),
               seconds: float = typer.Option(20, "--seconds", help="recording length"),
               countdown: int = typer.Option(3, "--countdown", help="seconds before recording starts"),
+              apply: bool = typer.Option(False, "--apply", help="write the suggested knob moves to the edit buffer"),
               as_json: bool = typer.Option(False, "--json", help="@@CALIB stream + one @@RESULT line (desktop app)")) -> None:
     """Play the song's part through the patch; the GT-1's USB recording is compared with the song's guitar.
 
-    Step 1 (measure only): shows how the patch differs from the song. Nothing is written to the device."""
+    Shows how the patch differs from the song and which knob moves would close the gap. With --apply the moves go
+    to the edit buffer (no slot is written: keep them with `gt1 save`, take them back with `gt1 apply --undo`)."""
     from .report import CALIB, ERROR, RESULT, emit
 
     say = (lambda ev: emit(CALIB, ev)) if as_json else None
     try:
         out = _calibrate(source, role, slot, seconds, countdown, say)
+        if apply and out["moves"]:
+            try:
+                out["applied"] = _apply_calib(Path(out["record"]))
+            except Exception as e:  # the measurement still counts; the moves can be applied later
+                out["apply_error"] = str(e)
     except Exception as e:
         if not as_json:
             raise
@@ -203,6 +210,17 @@ def calibrate(source: str = typer.Argument(..., help="the song (same URL / file 
     console.print(f"  reverb: şarkı {rs}, patch {rp}", highlight=False)
     for w in out["warnings"]:
         console.print(f"[yellow]uyarı:[/] {w}", highlight=False)
+    if out["moves"]:
+        console.print("önerilen düzeltme: " + ", ".join(f"{m['label']} {m['from']} → {m['to']}" for m in out["moves"]),
+                      highlight=False)
+    for n in out["move_notes"]:
+        console.print(f"  [dim]• {n}[/]", highlight=False)
+    if "applied" in out:
+        _print_applied(out["applied"])
+    elif "apply_error" in out:
+        console.print(f"[red]uygulanamadı:[/] {out['apply_error']}", highlight=False)
+    elif out["moves"]:
+        console.print(f"[dim]uygulamak için: tonematch gt1 apply \"{out['record']}\"[/]", highlight=False)
     console.print(f"[dim]kayıt: {out['wav']}[/]", highlight=False)
 
 
@@ -252,6 +270,8 @@ def _calibrate(source: str, role: str | None, slot: str | None, seconds: float, 
             warnings.append("PREFERENCE: PREAMP = SYSTEM: cihaz patch'in preamp ayarlarını yok sayıyor.")
         patch = g.read_patch()
         current = g.current_patch_number()
+    knobs = cal.side_values(patch, ctl_on)  # before the CTL view: a dual patch keeps that side in its assigns
+    mid_freq = str(patch.get("master_eq_mid_freq"))
     if ctl_on:
         patch = ctl_on_patch(patch)
     pview = {"name": patch.name.strip(), "slot": slot_label(current) if current < 99 else None,
@@ -297,15 +317,86 @@ def _calibrate(source: str, role: str | None, slot: str | None, seconds: float, 
     fx = {"delay_ms": (target.delay.time_ms if target.delay.detected else None,
                        played.profile.delay.time_ms if played.profile.delay.detected else None),
           "reverb": (target.reverb.amount, played.profile.reverb.amount)}
+    moves, move_notes = cal.corrections(cmp["diff"], knobs, mid_freq)
+    record = cdir / f"{role}_{stamp}.json"
     out = {"track_id": tid, "title": meta.get("title", ""), "artist": meta.get("artist", ""), "role": role,
            "ctl_on": ctl_on, "patch": {k: v for k, v in pview.items() if k != "summary"}, "values": values,
            "fx": fx, "compare": cmp, "played_seconds": played.seconds, "level_db": played.level_db,
-           "warnings": warnings, "wav": str(wav), "device": dev_label}
+           "warnings": warnings, "wav": str(wav), "device": dev_label, "record": str(record),
+           "moves": [{"field": f, "label": cal.LABELS[f], "from": knobs[f], "to": v} for f, v in moves.items()],
+           "move_notes": move_notes}
     # kept for step 4 (learning the engine's systematic errors): what was played, through which knobs
-    (cdir / f"{role}_{stamp}.json").write_text(
-        json.dumps({**out, "patch_summary": pview["summary"], "played_profile": played.profile.to_dict()},
-                   ensure_ascii=False, indent=1, default=str), encoding="utf-8")
+    record.write_text(json.dumps({**out, "patch_summary": pview["summary"], "played_profile": played.profile.to_dict()},
+                                 ensure_ascii=False, indent=1, default=str), encoding="utf-8")
     return out
+
+
+def _apply_calib(record: Path, undo: bool = False) -> dict:
+    """Put a calibration's knob moves into the edit buffer (or take them back), on the side of the patch it measured.
+
+    Refused when another patch is selected; a knob the player has turned since is left alone. Edit buffer only:
+    no slot is touched (no backup needed), `gt1 save` keeps the result. The record logs what was applied."""
+    from datetime import datetime
+
+    from . import calibrate as cal
+    from .device.gt1.client import connect
+
+    rec = json.loads(record.read_text(encoding="utf-8"))
+    done = rec.get("applied_moves")
+    if undo and not done:
+        raise RuntimeError("bu kalibrasyonun düzeltmesi uygulanmamış; geri alınacak bir şey yok")
+    if not undo and done:
+        raise RuntimeError("bu kalibrasyonun düzeltmesi zaten uygulandı (geri almak için --undo)")
+    moves = done if undo else rec.get("moves", [])
+    ctl_on = bool(rec.get("ctl_on"))
+    name = rec["patch"]["name"]
+    with connect() as g:
+        p = g.read_patch()
+        if p.name.strip() != name.strip():
+            raise RuntimeError(f"cihazda başka patch seçili ('{p.name.strip()}', beklenen '{name.strip()}'); "
+                               "hiçbir şey yazılmadı")
+        cur = cal.side_values(p, ctl_on)
+        plan, done_now, skipped = {}, [], []
+        for m in moves:
+            expect, target = (m["to"], m["from"]) if undo else (m["from"], m["to"])
+            if cur[m["field"]] != expect:
+                skipped.append(f"{m['label']}: cihazda {cur[m['field']]} (beklenen {expect}), dokunulmadı")
+                continue
+            plan[m["field"]] = target
+            done_now.append({**m, "from": expect, "to": target})
+        q = p.copy()
+        notes = cal.apply_moves(q, plan, ctl_on)
+        noted = {n.split(":")[0] for n in notes}
+        done_now = [m for m in done_now if m["label"] not in noted]
+        changed = [k for k, v in q.params.items() if p.params.get(k) != v]
+        if changed:
+            try:
+                g.write_fields(q, changed)
+            except Exception:
+                g.write_temp(p)  # back to what it was rather than half a correction
+                raise
+    dual = bool(cal._ctl_assigns(p))
+    out = {"undo": undo, "patch": name, "ctl_on": ctl_on, "applied": done_now, "skipped": skipped, "notes": notes,
+           "retoggle_ctl": ctl_on and dual and bool(done_now), "record": str(record)}
+    rec.setdefault("apply_log", []).append({"at": datetime.now().isoformat(timespec="seconds"), **out})
+    rec["applied_moves"] = None if undo else done_now
+    record.write_text(json.dumps(rec, ensure_ascii=False, indent=1, default=str), encoding="utf-8")
+    return out
+
+
+def _print_applied(a: dict) -> None:
+    verb = "geri alındı" if a["undo"] else "edit buffer'a yazıldı"
+    if a["applied"]:
+        console.print(f"[green]{verb}:[/] " + ", ".join(f"{m['label']} {m['from']} → {m['to']}" for m in a["applied"]),
+                      highlight=False)
+    else:
+        console.print("[yellow]hiçbir knob değişmedi[/]")
+    for n in a["skipped"] + a["notes"]:
+        console.print(f"  [yellow]•[/] {n}", highlight=False)
+    if a["retoggle_ctl"]:
+        console.print("  CTL açık taraf: yeni değerin devreye girmesi için CTL'yi kapatıp tekrar aç.", highlight=False)
+    if a["applied"]:
+        console.print("[dim]slot değişmedi; tekrar çal, beğenirsen `gt1 save` ile kaydet.[/]", highlight=False)
 
 
 # ---------------------------------------------------------------------------------------------- gt1
@@ -450,6 +541,25 @@ def gt1_restore(tsl: Path, index: int = typer.Option(..., help="1-based patch in
         bk = backup_slots(g, [s], slot_label(s))
         g.store_patch(p, s)
     console.print(f"[green]{p.name} -> {slot_label(s)}[/] (previous content: {bk})")
+
+
+@gt1.command("apply")
+def gt1_apply(record: Path = typer.Argument(..., help="a calibration record (calibrate's 'record' path)"),
+              undo: bool = typer.Option(False, "--undo", help="take the applied moves back"),
+              as_json: bool = typer.Option(False, "--json", help="one @@RESULT line (desktop app)")) -> None:
+    """Write a calibration's suggested knob moves to the edit buffer (no slot is written)."""
+    from .report import ERROR, RESULT, emit
+
+    try:
+        out = _apply_calib(record, undo)
+    except Exception as e:
+        if not as_json:
+            raise
+        emit(ERROR, {"message": str(e), "kind": type(e).__name__})
+        raise typer.Exit(1)
+    if as_json:
+        return emit(RESULT, out)
+    _print_applied(out)
 
 
 @gt1.command("save")

@@ -94,6 +94,15 @@ function start(id: number, args: string[]) {
         changed: [{ label: "PRESENCE", from: "0", to: "18" }, { label: "MIDDLE", from: "51", to: "58" }] });
       return 0;
     }
+    if (c0 === "gt1" && c1 === "apply") {
+      await wait(900);
+      const undo = args.includes("--undo");
+      const cal = demoCalibration("rhythm", Math.max(0, calRound - 1), slotName(current).trim(), "", current);
+      const applied = cal.moves.map((x) => (undo ? { ...x, from: x.to, to: x.from } : x));
+      result({ undo, patch: slotName(current).trim(), ctl_on: false, applied, skipped: [], notes: [], retoggle_ctl: false,
+        record: args[2] });
+      return 0;
+    }
     if (c0 === "gt1" && c1 === "tuner") return tuner(args.includes("--multi"));
     if (c0 === "calibrate") return calibrate();
     if (c0 === "run") return run();

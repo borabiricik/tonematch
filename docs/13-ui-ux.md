@@ -84,6 +84,9 @@ Rail 1100px altında 64px ikon şeridine iner. Kalibrasyon tam pencere bir **she
   Rapor: spektral mesafe (dev), önceki tura göre fark, **Ne yapmalı** kartları (hangi knob, hangi yöne),
   **Eksen eksen** (şarkı ve sen aynı ölçekte), **Frekans frekans** (1/3 oktav fark grafiği; CLI'nin
   `third_oct_diff` verisi artık gösteriliyor; bas sızıntısı bantları taralı), "Slota kaydet…" (onaylı).
+  **Önerilen düzeltme** (2026-10-22): knob başına önceki → yeni değer; "Uygula" (`gt1 apply <kayıt> --json`, sadece
+  edit buffer) sonrası buton "Geri al" olur (`--undo`), cihazda çevrilmiş olduğu için atlanan knob soluk gösterilir,
+  CTL açık tarafta "CTL'yi kapatıp tekrar aç" notu. Yeni tur başlayınca uygulama durumu sıfırlanır (yeni öneri).
   Kaydedilmemiş turla kapatırken uyarır. Sheet açılınca odak kapatma butonuna değil sheet'e gider (Space
   kapatmasın diye).
 - **Kütüphane** (`app/LibraryView.tsx`). Çıkarılan tonlar bu bilgisayarda saklanır (localStorage, en çok 40):
@@ -210,8 +213,7 @@ Windows'ta ⌘ yerine Ctrl. Sayfa değişince odak sayfaya taşınır (ekran oku
 ## Sıradaki işler (arayüz)
 1. `tweak` komutu gelince (07-roadmap #1) PatchCard'a kulak geri bildirimi: "fazla bas", "gain az" gibi hızlı
    düzeltmeler, knob'lar canlı değişir, onaylı yazma.
-2. Kalibrasyonda otomatik düzeltme (07-roadmap #0 adım 2) gelince rapora "Uygula" (edit buffer'a).
-3. Yedekten geri yükleme ekranı (`gt1 restore` var; yedek listesi için `gt1 backups --json` gerekir).
-4. Kütüphaneyi CLI'nin önbelleğinden (`tracks/<id>/report.json`) doldurmak: başka bilgisayarda çıkarılan
+2. Yedekten geri yükleme ekranı (`gt1 restore` var; yedek listesi için `gt1 backups --json` gerekir).
+3. Kütüphaneyi CLI'nin önbelleğinden (`tracks/<id>/report.json`) doldurmak: başka bilgisayarda çıkarılan
    tonlar da görünsün.
-5. Uzun işlerde bitince sistem bildirimi (Tauri notification plugin).
+4. Uzun işlerde bitince sistem bildirimi (Tauri notification plugin).

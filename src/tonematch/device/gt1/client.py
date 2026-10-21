@@ -188,6 +188,25 @@ class GT1Client:
         for (b, addr), data in zip(self.spec.block_addrs(self.spec.temp_area()), patch.block_bytes()):
             self.write(addr, data)
 
+    def write_fields(self, patch: Patch, fields: list[str]) -> None:
+        """Write single fields of the edit buffer (one DT1 each, ~30 ms) and read each back.
+
+        For small edits (calibration moves): a whole-patch write + read takes ~3 s. Nothing is saved to a slot.
+        A 14-bit value goes as its _h,_l pair in one message: the GT-1 ignores a write (and a read) that starts at
+        the _l byte, and a value outside the parameter's range (verified 2026-10-22, assign target max)."""
+        area = self.spec.temp_area()
+        units: dict[str, list[str]] = {}  # first byte -> the bytes written together
+        for f in fields:
+            base = f[:-2] if f.endswith(("_h", "_l")) and f[:-2] in self.spec.combined else None
+            units.setdefault(base + "_h" if base else f, [base + "_h", base + "_l"] if base else [f])
+        addr = {u: [*area, self.spec.field_off[u] >> 7, self.spec.field_off[u] & 0x7F] for u in units}
+        for u, fs in units.items():
+            self.write(addr[u], [patch.params[f] for f in fs])
+        time.sleep(0.1)
+        bad = [u for u, fs in units.items() if self.read(addr[u], len(fs)) != [patch.params[f] for f in fs]]
+        if bad:
+            raise GT1Error(f"edit buffer did not take {bad[:6]}")
+
     def save_temp_to_slot(self, slot: int) -> None:
         self.spec.user_area(slot)  # validates range
         self._drain()

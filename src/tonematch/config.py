@@ -23,11 +23,11 @@ BACKUP_DIR = DATA_DIR / "backups"
 MODELS_DIR = DATA_DIR / "models"
 
 # BOSS TONE STUDIO (Adobe AIR): preset bank in the install, downloaded livesets in AIR's "Local Store".
-# macOS locations follow the AIR layout (app resources inside the .app, store under ~/Library/Preferences);
-# not verified on a Mac yet -> override with BTS_INSTALL / BTS_APPDATA if needed.
+# macOS (verified 2026-10-22): the app is BOSS_TONE_STUDIO_for_GT1.app, the store is under ~/Library/Application Support.
+# Override with BTS_INSTALL / BTS_APPDATA if needed.
 if IS_MAC:
-    _bts_install = "/Applications/BOSS TONE STUDIO for GT-1.app/Contents/Resources"
-    _bts_appdata = Path.home() / "Library" / "Preferences" / "BOSS-TONE-STUDIO-for-GT-1" / "Local Store"
+    _bts_install = "/Applications/BOSS_TONE_STUDIO_for_GT1.app/Contents/Resources"
+    _bts_appdata = Path.home() / "Library" / "Application Support" / "BOSS-TONE-STUDIO-for-GT-1" / "Local Store"
 else:
     _bts_install = r"C:\Program Files (x86)\BOSS TONE STUDIO for GT-1"
     _bts_appdata = Path(os.environ.get("APPDATA", "")) / "BOSS-TONE-STUDIO-for-GT-1" / "Local Store"

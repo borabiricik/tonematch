@@ -53,15 +53,19 @@ desktop/dev.sh build       # .app / .dmg
 Rust derleme çıktısı OneDrive/iCloud dışında: `%LOCALAPPDATA%\tonematch\desktop-target`,
 `~/Library/Caches/tonematch/desktop-target`.
 
-## macOS notları (2026-10-21: dev modda açıldı, arayüz demo moduyla denendi; cihazla denenmedi)
+## macOS notları (2026-10-21: dev modda açıldı, demo moduyla denendi; 2026-10-22: GT-1 bağlı, okuma komutları çalışıyor)
 - Python: torch PyPI'dan (MPS/CPU), `audio-separator[cpu]` (CUDA yok → ayrıştırma GPU'suz, daha yavaş).
-- BTS yolları (`config.py`) AIR düzenine göre tahmin: `/Applications/BOSS TONE STUDIO for GT-1.app/Contents/Resources`,
-  `~/Library/Preferences/BOSS-TONE-STUDIO-for-GT-1/Local Store`. Yanlışsa `BTS_INSTALL` / `BTS_APPDATA`.
-  KB (BOSS preset'leri) buradan okunur; BTS kurulu olmalı.
+- BTS yolları (`config.py`, 2026-10-22 Mac'te doğrulandı): `/Applications/BOSS_TONE_STUDIO_for_GT1.app/Contents/Resources`,
+  `~/Library/Application Support/BOSS-TONE-STUDIO-for-GT-1/Local Store` (eski tahmin yanlıştı: KB boş geliyor,
+  11 test düşüyordu). Farklıysa `BTS_INSTALL` / `BTS_APPDATA`. KB (BOSS preset'leri) buradan okunur; BTS kurulu olmalı.
 - BTS açık mı kontrolü `ps` ile; GT-1 MIDI (CoreMIDI) python-rtmidi ile.
 - `src/tonematch/device/gt1/data/gt1_spec.json` `.gitignore`'daki `data/` kuralı yüzünden repoda yok: yeni bir
   bilgisayarda diğerinden kopyala ya da `tools/build_gt1_spec.py` ile üret; yoksa cihaz komutları ve bazı testler
   açılmaz (arayüz "GT-1 parametre tablosu yok" der).
+  Mac'te üretim (2026-10-22, Java 17 + JPEXS FFDec 26.3.0, sadece gereken 4 sınıf, ~2 sn):
+  `java -jar ffdec-cli.jar -selectclass tonecentral.parametors.TemporaryParams,tonecentral.common.define.ParameterDefinitionGT,tonecentral.common.define.CTLAssignTargetDefinitionGT,tonecentral.common.define.CTLDefinitionGT -export script <out> "/Applications/BOSS_TONE_STUDIO_for_GT1.app/Contents/Resources/BOSS_TONE_STUDIO_for_GT1.swf"`
+  sonra `uv run python tools/build_gt1_spec.py <out>/scripts --bts "/Applications/BOSS_TONE_STUDIO_for_GT1.app/Contents/Resources"`
+  (995 alan, 468 tanım). Cihazla doğrulandı: `gt1 status` 99 slotu doğru adlarla okudu; 40 test geçiyor.
 - `tonematch.sh` ve `desktop/dev.sh` repoda çalıştırılabilir olarak işaretli değil (Windows'tan geldi): `chmod +x`.
 
 ## Sonraki adımlar

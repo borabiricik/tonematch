@@ -48,6 +48,12 @@
 4. `--only` ve grup birleştirme/bölme için etkileşimli onay (isteğe bağlı; varsayılan otomatik kalsın).
 5. Analiz raporu (HTML): grupların zaman çizelgesi, spektrum grafikleri, dinleme klipleri.
 
+## Pratik sistemi (2026-10-22, docs/14)
+- [x] v1: egzersiz üreteci + hoca notları, canlı nota tespiti ve puanlama, hız merdiveni (sor, sonra geç), 30 dk
+      günlük rutin, ilerleme, teori/kulak quiz'i, şarkıdan solo transkripsiyonu; CLI + arayüz + demo.
+- [ ] Gerçek çalımla doğrulama (macOS mikrofon izni sonrası) ve eşik ayarı; akor/ritim egzersizleri; transkripsiyonu
+      kulakla düzeltme.
+
 ## Masaüstü arayüzü
 - [x] Arayüz v2 "Signal Path" + tasarım sistemi v2 + demo modu + `gt1 select` (2026-10-21, `13-ui-ux.md`).
 - Sıradaki arayüz işleri `13-ui-ux.md` sonunda (tweak geri bildirimi, kalibrasyonda "Uygula", yedekten geri yükleme).

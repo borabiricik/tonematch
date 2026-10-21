@@ -193,13 +193,14 @@ export function BandDiff({ bands, ignored = [], range = 8 }: { bands: Record<str
 }
 
 // --------------------------------------------------------------- Sparkline
-/** A short series (calibration rounds): lower is closer, the last point is marked. */
-export function Sparkline({ values, width = 120, height = 32, label }: { values: number[]; width?: number; height?: number; label: string }) {
+/** A short series, the last point marked. Default: bigger values lower (calibration distance: lower is closer);
+ *  rising: bigger values higher (tempo, minutes, accuracy). */
+export function Sparkline({ values, width = 120, height = 32, label, rising }: { values: number[]; width?: number; height?: number; label: string; rising?: boolean }) {
   if (values.length === 0) return null;
   const max = Math.max(...values), min = Math.min(...values);
   const span = Math.max(max - min, 0.5);
   const x = (i: number) => (values.length === 1 ? width / 2 : 4 + (i * (width - 8)) / (values.length - 1));
-  const y = (v: number) => 4 + ((v - min) / span) * (height - 8);
+  const y = (v: number) => 4 + ((rising ? max - v : v - min) / span) * (height - 8);
   const d = values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
   return (
     <svg className="tm-spark" width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={label}>

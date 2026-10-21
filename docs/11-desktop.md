@@ -79,7 +79,10 @@ Rust derleme çıktısı OneDrive/iCloud dışında: `%LOCALAPPDATA%\tonematch\d
   → artifact'a yayınla. Uygulama aynı dosyaları doğrudan kullanır.
 - React 18, klasik JSX (`import * as React`), bileşenler `window.ToneMatch` olarak da paketlenir (vite.ds.config.ts).
 - CLI'nin `--json` çıktısı (`@@RESULT` / `@@ERROR`, `src/tonematch/report.py`): `run`, `gt1 info`, `gt1 status`, `gt1 list`,
-  `gt1 select`, `gt1 save`, `gt1 apply`, `calibrate`, `gt1 tuner`.
+  `gt1 select`, `gt1 save`, `gt1 apply`, `calibrate`, `gt1 tuner`, `practice *` (`play` / `quiz` / `latency` canlı
+  `@@PRACTICE` satırları gönderir, interaktif çalışır: Durdur = stdin satırı).
+- **macOS mikrofon izni**: kalibrasyon ve pratik GT-1'in USB girişini açar; paketli uygulamada
+  `src-tauri/Info.plist` (`NSMicrophoneUsageDescription`) gerekli, dev modda izin uygulamayı başlatan terminale sorulur.
 - **Demo modu** (Ayarlar'dan; tarayıcıda hep açık): `src/demo/mock.ts` aynı komutların aynı çıktısını üretir, cihaz ve
   Python gerekmez. Ayrıntı: `13-ui-ux.md`.
 - **Kalibrasyon** (`app/CalibrateSheet.tsx`, 2026-10-19; v2'de tam pencere "sahne modu"): sonuç kartında her tonun

@@ -151,14 +151,14 @@ def day_index(d: date | None = None) -> int:
     return ((d or date.today()) - date(2026, 1, 5)).days  # a Monday
 
 
-# technique focus by day (6-day cycle; the 7th day repeats the first lightly)
+# technique focus by day (6-day cycle): (name, exercises, the burst's source: a fast 4-note cell of the day's motion)
 FOCUS = [
-    ("Alternate picking", ["seq/{k}/natural_minor/4/0", "tremolo/4"]),
-    ("Legato", ["trill/{trill}", "legato3nps/{k}/natural_minor/0"]),
-    ("Arpej", ["sweep/{k}/min/3", "arp7/{k}/min7"]),
-    ("Alternate picking", ["seq/{k}/natural_minor/3/0", "skip/{k}/min"]),
-    ("Pentatonik hız", ["pent6/{k}/1", "pent/{k}/{box}"]),
-    ("Ritim ve sweep", ["subdiv", "sweep/{k}/min/5"]),
+    ("Alternate picking", ["seq/{k}/natural_minor/4/0", "tremolo/4"], "seq/{k}/natural_minor/4/0"),
+    ("Legato", ["trill/{trill}", "legato3nps/{k}/natural_minor/0"], "trill/{trill}"),
+    ("Arpej", ["sweep/{k}/min/3", "arp7/{k}/min7"], "sweep/{k}/min/3"),
+    ("Alternate picking", ["seq/{k}/natural_minor/3/0", "skip/{k}/min"], "3nps/{k}/natural_minor/0"),
+    ("Pentatonik hız", ["pent6/{k}/1", "pent/{k}/{box}"], "pent6/{k}/1"),
+    ("Ritim ve sweep", ["subdiv", "sweep/{k}/min/5"], "pent/{k}/1"),
 ]
 QUIZ_OF_DAY = ["fretboard", "interval", "degree", "echo"]
 
@@ -171,7 +171,7 @@ def routine(minutes: int | None = None, d: date | None = None, solo_item: dict |
     k = key_of_day(i)
     box = i % 5 + 1
     trill = ["12", "13", "14", "34"][i % 4]
-    focus_name, focus_ids = FOCUS[i % len(FOCUS)]
+    focus_name, focus_ids, burst_src = FOCUS[i % len(FOCUS)]
     fill = lambda s: s.format(k=k, box=box, trill=trill)
     share = {"warmup": 0.10, "technique": 0.30, "burst": 0.15, "scales": 0.20, "theory": 0.10, "solo": 0.15}
     m = {b: max(2, round(minutes * f)) for b, f in share.items()}
@@ -184,7 +184,7 @@ def routine(minutes: int | None = None, d: date | None = None, solo_item: dict |
          "why": "Bugünün odağı. Önce temiz, sonra hız: iki temiz turdan sonra tempo artar.", "items": tech},
         {"id": "burst", "title": "Hız patlaması", "minutes": m["burst"],
          "why": "Rahat temponun üstünde kısa patlamalar: el hızlı hareketi böyle öğrenir, dinlenmede gevşe.",
-         "items": [f"burst/{tech[0]}"]},
+         "items": [f"burst/{fill(burst_src)}"]},
         {"id": "scales", "title": f"Gam ve pozisyon · {k}", "minutes": m["scales"],
          "why": f"Bu haftanın tonu {k} (beşliler çemberinde her hafta bir ton). Pentatonik kutu {box} ve 3 nota/tel "
                 "şekli: klavyeyi parça parça değil ağ gibi öğren.",

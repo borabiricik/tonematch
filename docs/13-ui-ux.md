@@ -210,6 +210,23 @@ Windows'ta ⌘ yerine Ctrl. Sayfa değişince odak sayfaya taşınır (ekran oku
 - **Cihazla denenmedi** (GT-1 bağlı değildi). İlk cihaz denemesinde bakılacaklar: `gt1 select` gerçekten slota
   geçiyor mu; tuner / kalibrasyon akışları yeni arayüzde; "Klasörde göster" Windows'ta.
 
+## Pratik (2026-10-22, `app/practice/`, docs/14)
+- Rail'de "Pratik" (⌘5). Sekmeler: **Bugün** (ders planı gibi dikey zaman çizelgesi: blok, süre, neden, egzersizler,
+  tamamlananlar işaretli, "Rutini başlat / Devam et", süre seçimi, ilk kullanımda gecikme testi önerisi),
+  **Egzersizler** (gruplu kartlar, seviye noktaları, çalışma temposu / rekor, ton seçimi), **Teori ve kulak**,
+  **Solo** (şarkıdan çıkar + cümle kartları), **İlerleme** (seri, dakika, egzersiz başına tempo eğrisi, quiz yüzdeleri).
+- **Oynatıcı** (`PlayerSheet`, sahne modu): büyük BPM (←/→, Shift ±5), uzunluk, Space başlat/durdur; tab şeridi
+  (SVG, imleç rAF ile akar, notalar yeşil / sarı / kırmızı, önceki tur soluk, birden fazla turda kaçan nota kırmızı
+  çerçeveli), ön sayım dev rakamla, canlı doğruluk / tur / fazla nota, zamanlama şeridi (−60..+60 ms, vuruş bölgesi
+  yeşil), seviye. Yan panel: odak, klavye şeması (kökler dolu, çalınan nota vurgulu), hoca notları. Sonuç: doğruluk,
+  vuruşta %, acele/geride, sayımlar, tur tur eğri, merdiven kararı; "faster" kararında onay penceresi
+  ("Evet, X BPM" / "Hayır, kal" / "Sonraki egzersize geç").
+- **Quiz** (`QuizSheet`): büyük soru, gerekirse tel vurgulu klavye, duyulan notalar, doğru/yanlış çerçevesi, cevap
+  geçmişi noktaları. **Gecikme testi** (`LatencySheet`).
+- Tasarım sistemi: `Sparkline`'a `rising` (büyük değer yukarıda) eklendi; yeni ikon `metronome`.
+- Demo: `src/demo/practice.ts` + `practice.json` (Python'un ürettiği katalog ve rutin), simüle oyuncu her turda
+  biraz daha iyi çalar.
+
 ## Sıradaki işler (arayüz)
 1. `tweak` komutu gelince (07-roadmap #1) PatchCard'a kulak geri bildirimi: "fazla bas", "gain az" gibi hızlı
    düzeltmeler, knob'lar canlı değişir, onaylı yazma.

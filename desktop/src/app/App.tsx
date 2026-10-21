@@ -4,6 +4,7 @@ import { Console, Icon, IconButton, Kbd, Led, Mark, Status, Toaster, cx, slotLab
 import { DeviceView } from "./DeviceView";
 import { LibraryView } from "./LibraryView";
 import { MatchView } from "./MatchView";
+import { PracticeView } from "./practice/PracticeView";
 import { SettingsView } from "./SettingsView";
 import { TunerView } from "./TunerView";
 import { friendly, kbd, typing, useStored, type Device, type RunRequest, type Theme, type View } from "./state";
@@ -16,6 +17,7 @@ const NAV: { id: View; label: string; icon: IconName; key: string }[] = [
   { id: "library", label: "Kütüphane", icon: "library", key: "2" },
   { id: "device", label: "Cihaz", icon: "device", key: "3" },
   { id: "tuner", label: "Tuner", icon: "tuner", key: "4" },
+  { id: "practice", label: "Pratik", icon: "metronome", key: "5" },
 ];
 
 type Info = { current: string; edit_buffer: string; preamp_from_system: boolean; slots?: SlotInfo[] };
@@ -186,6 +188,7 @@ export function App() {
             </div>
           )}
           {view === "tuner" && <div className="main__page main__page--stage"><TunerView device={device} busy={busy} /></div>}
+          {view === "practice" && <div className="main__page"><PracticeView active={view === "practice"} /></div>}
           {view === "settings" && (
             <div className="main__page">
               <SettingsView theme={theme} setTheme={setTheme} env={env} />

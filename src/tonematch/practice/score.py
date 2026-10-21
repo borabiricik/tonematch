@@ -128,7 +128,7 @@ class Scorer:
         ex = [e for e in self.expected if e.verdict is not None and (upto_loop is None or e.loop <= upto_loop)]
         if not ex:
             return {"notes": 0, "correct": 0, "accuracy": 0.0, "on_time": 0.0, "mean_ms": None, "spread_ms": None,
-                    "extras": self.extras, "loops": [], "counts": {}}
+                    "extras": self.extras, "per_loop": [], "counts": {}}
         right = [e for e in ex if e.verdict in ("hit", "early", "late")]
         dts = np.array([e.dt_ms for e in right]) if right else np.zeros(0)
         loops = []
@@ -145,5 +145,5 @@ class Scorer:
                 "on_time": round(counts["hit"] / len(ex), 3),
                 "mean_ms": round(float(dts.mean()), 1) if dts.size else None,
                 "spread_ms": round(float(dts.std()), 1) if dts.size else None,
-                "extras": self.extras, "loops": loops, "counts": counts,
+                "extras": self.extras, "per_loop": loops, "counts": counts,
                 "trouble": sorted([j for j, c in trouble.items() if c > 1])}

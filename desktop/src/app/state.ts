@@ -27,7 +27,7 @@ export function useStored<T>(key: string, fallback: T): [T, (v: T | ((prev: T) =
 }
 
 // ------------------------------------------------------------------ types
-export type View = "match" | "library" | "device" | "tuner" | "settings";
+export type View = "match" | "library" | "device" | "tuner" | "practice" | "settings";
 export type Target = "slot" | "listen" | "file";
 export type DualMode = "dual" | "separate";
 export type Engine = "algo" | "claude";

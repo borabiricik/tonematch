@@ -15,6 +15,7 @@ gt1-tone-matcher/
 │   ├── catalog.py            # GT-1 model isim listeleri (testlerde spec ile doğrulanır)
 │   ├── kb.py                 # 411 pro patch (BTS preset + liveset): model başına knob medyanları, şablonlar
 │   ├── match.py              # ton motoru: ses imzası → model, knob'lar, efekt kuralları (deterministik)
+│   ├── practice/             # pratik sistemi (docs/14): theory, exercises, listen, score, session, progress, quiz, solo, cli
 │   └── device/gt1/
 │       ├── data/gt1_spec.json  # ÜRETİLMİŞ tek kaynak (tools/build_gt1_spec.py)
 │       ├── spec.py             # spec yükleme, ekran↔ham değer dönüşümü

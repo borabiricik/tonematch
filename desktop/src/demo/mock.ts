@@ -3,6 +3,7 @@
 // Turned on in Settings, or automatically when the UI runs in a plain browser (npm run dev, no Tauri).
 import { planTuning } from "../tuning";
 import { DEMO_SLOTS, demoCalibration, demoRun } from "./fixtures";
+import { practice } from "./practice";
 
 type Emit = (event: "cli-line" | "cli-exit", payload: unknown) => void;
 type Job = { stop?: () => void; cancel: () => void };
@@ -105,6 +106,7 @@ function start(id: number, args: string[]) {
     }
     if (c0 === "gt1" && c1 === "tuner") return tuner(args.includes("--multi"));
     if (c0 === "calibrate") return calibrate();
+    if (c0 === "practice") return practice(args, { out, result, error, wait, opt, stopped: () => stopped });
     if (c0 === "run") return run();
     out(`demo: '${args.join(" ")}' desteklenmiyor`, "stderr");
     return 2;

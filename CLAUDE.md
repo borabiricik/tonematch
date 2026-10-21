@@ -25,6 +25,7 @@ patch'leri üreten ve cihaza yazan araç. Çalışır durumda (v0.1, 2026-10-17)
 | `docs/10-tuning.md` | akort tespiti, pitch shifter kuralları, kalibrasyon |
 | `docs/12-claude-mode.md` | isteğe bağlı Claude modu: akış, şema, arka uçlar |
 | `docs/11-desktop.md` | Tauri masaüstü arayüzü (Windows + macOS), CLI'yi alt süreç olarak çalıştırır |
+| `docs/14-practice.md` | pratik sistemi: egzersizler, canlı nota tespiti, hız merdiveni, rutin, quiz, solo |
 | `docs/13-ui-ux.md` | arayüz v2 "Signal Path": ekranlar, tasarım kararları, kısayollar, demo modu, tasarım sistemi, 3D tuner |
 
 ## Altın kurallar
@@ -74,6 +75,9 @@ patch'leri üreten ve cihaza yazan araç. Çalışır durumda (v0.1, 2026-10-17)
 .\tonematch.ps1 gt1 tuner [--multi]                 # cihazın tuner'ı, canlı (Enter / Ctrl+C ile çık)
 .\tonematch.ps1 calibrate "<url>" --role rhythm --slot U20 [--apply]   # çalarak kalibrasyon: USB kaydı vs şarkı + knob düzeltmesi (edit buffer)
 .\tonematch.ps1 gt1 apply <kalibrasyon>.json [--undo]         # önerilen düzeltmeyi edit buffer'a yaz / geri al
+.\tonematch.ps1 practice today | catalog | stats              # pratik: günlük rutin, egzersizler, ilerleme
+.\tonematch.ps1 practice play pent/A/1 [--bpm 90]            # metronom + canlı doğru/yanlış, hız merdiveni
+.\tonematch.ps1 practice quiz fretboard | latency | solo "<url>"   # teori/kulak, gecikme testi, şarkıdan solo
 uv run pytest
 uv run python tools/calib.py <video_id> -v --from 3:20 --to 5:50
 uv run python tools/temp_roundtrip.py output\<dosya>.tsl

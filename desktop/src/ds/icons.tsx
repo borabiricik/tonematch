@@ -42,6 +42,8 @@ const paths = {
   grid: <><rect x="2" y="2" width="5" height="5" rx="1" /><rect x="9" y="2" width="5" height="5" rx="1" /><rect x="2" y="9" width="5" height="5" rx="1" /><rect x="9" y="9" width="5" height="5" rx="1" /></>,
   footswitch: <><circle cx="8" cy="9" r="3.75" /><path d="M8 5.25V2.5M6 2.5h4" /></>,
   ear: <><path d="M4.5 6a3.5 3.5 0 0 1 7 0c0 2-2 2.5-2 4.5a2 2 0 0 1-3.5 1.3" /><path d="M6.75 6.25a1.25 1.25 0 0 1 2.5 0" /></>,
+  // a pyramid metronome with its pendulum: the practice view
+  metronome: <><path d="M5.75 2.25h4.5l2.5 11.5H3.25z" /><path d="M8 11.5l3.25-7.25M3.75 11.25h8.5" /></>,
   history: <><path d="M2.75 8a5.25 5.25 0 1 0 1.6-3.8" /><path d="M2.5 2.75v2.5H5M8 5.25V8l2 1.25" /></>,
   demo: <><rect x="2" y="2.5" width="12" height="11" rx="1.5" /><path d="M5 6l2 2-2 2M8.5 10h2.5" /></>,
   more: <><circle cx="3.5" cy="8" r="0.6" /><circle cx="8" cy="8" r="0.6" /><circle cx="12.5" cy="8" r="0.6" /></>,

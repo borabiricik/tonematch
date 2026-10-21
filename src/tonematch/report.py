@@ -11,6 +11,7 @@ from .device.gt1.patch import Patch
 RESULT, ERROR = "@@RESULT ", "@@ERROR "
 TUNER = "@@TUNER "  # one live tuner reading per line (`gt1 tuner --json`), before the final @@RESULT
 CALIB = "@@CALIB "  # `calibrate --json` progress: countdown / level / measuring, before the final @@RESULT
+PRACTICE = "@@PRACTICE "  # `practice play|quiz|latency --json`: beats, judged notes, questions, before @@RESULT
 
 
 def emit(prefix: str, payload) -> None:

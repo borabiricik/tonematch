@@ -14,6 +14,9 @@ from rich.table import Table
 app = typer.Typer(add_completion=False, no_args_is_help=True, help="YouTube guitar tone -> BOSS GT-1 patch")
 gt1 = typer.Typer(no_args_is_help=True, help="GT-1 device commands")
 app.add_typer(gt1, name="gt1")
+from .practice.cli import app as practice  # noqa: E402  (light: every command imports lazily)
+
+app.add_typer(practice, name="practice")
 console = Console()
 
 

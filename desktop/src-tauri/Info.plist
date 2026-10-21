@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- macOS asks for this before any audio input: calibration and practice record the GT-1's USB input -->
+  <key>NSMicrophoneUsageDescription</key>
+  <string>tonematch, GT-1'in USB kaydını dinler: çalarak kalibrasyon ve pratik (nota ve zamanlama tespiti).</string>
+</dict>
+</plist>
